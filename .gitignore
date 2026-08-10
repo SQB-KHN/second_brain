@@ -1,0 +1,48 @@
+# Environment and secrets — NEVER commit
+.env
+.env.local
+*.pem
+*.key
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+venv/
+.venv/
+pip-wheel-metadata/
+env/
+ENV/
+*.egg-info/
+dist/
+build/
+
+# IDE and OS
+.DS_Store
+.idea/
+.vscode/
+*.swp
+*.swo
+Thumbs.db
+
+# Logs
+logs/*.log
+logs/test-results.md
+
+# Personal knowledge data — keep local only
+data/meta.json
+data/graph.json
+data/raw/**
+!data/raw/.gitkeep
+!data/raw/assets/
+data/raw/assets/**
+!data/raw/assets/.gitkeep
+data/wiki/**
+!data/wiki/projects/.gitkeep
+!data/wiki/areas/.gitkeep
+!data/wiki/resources/.gitkeep
+!data/wiki/archives/.gitkeep
+data/embeddings/**
+!data/embeddings/.gitkeep

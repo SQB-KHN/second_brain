@@ -1,0 +1,8 @@
+SecondSelf weekly sync — Aug 10
+
+- Finish capture pipeline (Phase 1)
+- Start classify.py next week
+- PARA folders: projects, areas, resources, archives
+- Test with real notes before deploying graph UI
+
+Action: capture 10+ items before moving to Week 2.
