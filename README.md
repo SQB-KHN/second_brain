@@ -188,6 +188,7 @@ Commit and push `demo/`, `app.py`, `ask.py`, and the rest of the code.
 DEPLOY_MODE = "true"
 OPENAI_API_KEY = "sk-..."
 GROQ_API_KEY = "gsk-..."
+ENABLE_CAPTURE = "true"
 ENABLE_REFRESH_BRAIN = "false"
 ASK_RATE_LIMIT = "10"
 ```
@@ -201,6 +202,7 @@ ASK_RATE_LIMIT = "10"
 | `OPENAI_API_KEY` | `.env` | Secrets | Embeddings + optional RAG |
 | `GROQ_API_KEY` | `.env` | Secrets | Classify + RAG (alternative) |
 | `DEPLOY_MODE` | `false` | `true` | Read `demo/` instead of `data/` |
+| `ENABLE_CAPTURE` | `true` | `true` | Show capture box (`false` to hide on public demo) |
 | `ENABLE_REFRESH_BRAIN` | `true` | `false` | Disable pipeline on public URL |
 | `ASK_RATE_LIMIT` | `10` | `10` | Questions per minute |
 

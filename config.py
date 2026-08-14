@@ -61,8 +61,10 @@ LLM_MODEL = "gpt-4o-mini"
 BIDIRECTIONAL_LINKS = _env_flag("BIDIRECTIONAL_LINKS", default=True)
 
 # Public deploy safeguards (EC-DEP-003, EC-DEP-006)
+ENABLE_CAPTURE = _env_flag("ENABLE_CAPTURE", default=not DEPLOY_MODE)
 ENABLE_REFRESH_BRAIN = _env_flag("ENABLE_REFRESH_BRAIN", default=not DEPLOY_MODE)
 ASK_RATE_LIMIT_PER_MINUTE = max(1, int(os.getenv("ASK_RATE_LIMIT", "10")))
+CAPTURE_RATE_LIMIT_PER_MINUTE = max(1, int(os.getenv("CAPTURE_RATE_LIMIT", "5")))
 
 MAX_FILE_SIZE_MB = 25
 URL_TIMEOUT_SECONDS = 30
