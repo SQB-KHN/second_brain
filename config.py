@@ -8,22 +8,61 @@ from dotenv import load_dotenv
 load_dotenv()
 
 ROOT = Path(__file__).parent.resolve()
-DATA_DIR = ROOT / "data"
+
+
+def _env_flag(name: str, default: bool = False) -> bool:
+    value = os.getenv(name)
+    if value is None:
+        return default
+    return value.strip().lower() in {"1", "true", "yes", "on"}
+
+
+def resolve_data_dir() -> Path:
+    """
+    Resolve the active data directory.
+
+    Local development uses ``data/``. Cloud deploy sets ``DEPLOY_MODE=true``
+    (or ``SECONDSELF_DATA_DIR=demo``) to read the committed demo bundle.
+    """
+    explicit = os.getenv("SECONDSELF_DATA_DIR", "").strip()
+    if explicit:
+        path = Path(explicit)
+        return path if path.is_absolute() else (ROOT / path).resolve()
+
+    if _env_flag("DEPLOY_MODE"):
+        return ROOT / "demo"
+
+    return ROOT / "data"
+
+
+DEPLOY_MODE = _env_flag("DEPLOY_MODE")
+DATA_DIR = resolve_data_dir()
 RAW_DIR = DATA_DIR / "raw"
 RAW_ASSETS_DIR = RAW_DIR / "assets"
 WIKI_DIR = DATA_DIR / "wiki"
 EMBEDDINGS_DIR = DATA_DIR / "embeddings"
 LOGS_DIR = ROOT / "logs"
 GRAPH_FILE = DATA_DIR / "graph.json"
+GRAPH_HTML = ROOT / "graph.html"
+OBSIDIAN_VAULT_DIR = ROOT.parent / "secondself-obsidian-vault"
 META_FILE = DATA_DIR / "meta.json"
 LEGACY_META_FILE = RAW_DIR / "meta.json"
+WIKI_INDEX_FILE = WIKI_DIR / ".index.json"
+EMBEDDINGS_INDEX_FILE = EMBEDDINGS_DIR / "index.json"
 PIPELINE_LOG = LOGS_DIR / "pipeline.log"
 
 SIMILARITY_THRESHOLD = 0.82
 RAG_TOP_K = 5
 MIN_RETRIEVAL_SCORE = 0.5
+RAG_MAX_EXCERPT_CHARS = 1200
+RAG_MAX_CONTEXT_CHARS = 8000
 EMBEDDING_MODEL = "text-embedding-3-small"
 LLM_MODEL = "gpt-4o-mini"
+BIDIRECTIONAL_LINKS = _env_flag("BIDIRECTIONAL_LINKS", default=True)
+
+# Public deploy safeguards (EC-DEP-003, EC-DEP-006)
+ENABLE_REFRESH_BRAIN = _env_flag("ENABLE_REFRESH_BRAIN", default=not DEPLOY_MODE)
+ASK_RATE_LIMIT_PER_MINUTE = max(1, int(os.getenv("ASK_RATE_LIMIT", "10")))
 
 MAX_FILE_SIZE_MB = 25
 URL_TIMEOUT_SECONDS = 30
@@ -38,6 +77,9 @@ PARA_COLORS = {
 }
 
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY", "")
+GROQ_API_KEY = os.getenv("GROQ_API_KEY", "")
+GROQ_LLM_MODEL = os.getenv("GROQ_LLM_MODEL", "llama-3.3-70b-versatile")
+GROQ_BASE_URL = "https://api.groq.com/openai/v1"
 
 REQUIRED_DIRS = [
     DATA_DIR,

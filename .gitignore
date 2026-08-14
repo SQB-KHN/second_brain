@@ -1,6 +1,7 @@
 # Environment and secrets — NEVER commit
 .env
 .env.local
+.streamlit/secrets.toml
 *.pem
 *.key
 
@@ -23,15 +24,24 @@ build/
 .DS_Store
 .idea/
 .vscode/
+.obsidian/
 *.swp
 *.swo
 Thumbs.db
+
+# Obsidian / canvas scratch files
+*.canvas
+*.base
+wiki-link.md
 
 # Logs
 logs/*.log
 logs/test-results.md
 
-# Personal knowledge data — keep local only
+# Generated local artifacts
+graph.html
+
+# Personal knowledge data — keep local only (use demo/ for deploy)
 data/meta.json
 data/graph.json
 data/raw/**
@@ -40,9 +50,24 @@ data/raw/**
 data/raw/assets/**
 !data/raw/assets/.gitkeep
 data/wiki/**
+!data/wiki/projects/
+!data/wiki/areas/
+!data/wiki/resources/
+!data/wiki/archives/
+data/wiki/projects/**
 !data/wiki/projects/.gitkeep
+data/wiki/areas/**
 !data/wiki/areas/.gitkeep
+data/wiki/resources/**
 !data/wiki/resources/.gitkeep
+data/wiki/archives/**
 !data/wiki/archives/.gitkeep
 data/embeddings/**
 !data/embeddings/.gitkeep
+
+# Public demo bundle (committed for Streamlit Cloud)
+!demo/
+!demo/**
+
+# Generated Obsidian vault (sibling to secondself/)
+../secondself-obsidian-vault/

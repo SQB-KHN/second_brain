@@ -1,0 +1,209 @@
+{
+  "nodes": [
+    {
+      "id": "73017bb3-18d5-4378-a293-83c785464c02",
+      "label": "The Archivist Badge",
+      "para": "areas",
+      "tags": [
+        "note-taking",
+        "secondself"
+      ],
+      "summary": "earn the archivist badge by capturing everything",
+      "path": "demo/wiki/areas/the-archivist-badge.md",
+      "created": "2026-08-10T13:14:14Z",
+      "slug": "the-archivist-badge",
+      "degree": 0
+    },
+    {
+      "id": "cca3a9a2-3deb-4446-8962-1f415cfc3c9c",
+      "label": "Secondself System Architecture",
+      "para": "projects",
+      "tags": [
+        "secondself",
+        "para-method",
+        "knowledge-management",
+        "graph-viz"
+      ],
+      "summary": "SecondSelf is a local-first AI-augmented personal knowledge system",
+      "path": "demo/wiki/projects/secondself-system-architecture.md",
+      "created": "2026-08-10T13:14:17Z",
+      "slug": "secondself-system-architecture",
+      "degree": 0
+    },
+    {
+      "id": "837a75ce-328b-48e0-a9e9-b08cf704a8b4",
+      "label": "Secondself Weekly Sync Meeting Notes",
+      "para": "projects",
+      "tags": [
+        "meeting-notes",
+        "secondself",
+        "capture-pipeline"
+      ],
+      "summary": "discussing weekly tasks and goals for secondself project",
+      "path": "demo/wiki/projects/secondself-weekly-sync-meeting-notes-2.md",
+      "created": "2026-08-10T14:54:45Z",
+      "slug": "secondself-weekly-sync-meeting-notes-2",
+      "degree": 0
+    },
+    {
+      "id": "0c371e7d-d05e-4e12-9e5e-fe8ff8512a69",
+      "label": "Secondself Weekly Sync Meeting Notes",
+      "para": "projects",
+      "tags": [
+        "secondself",
+        "meeting-notes",
+        "capture-pipeline"
+      ],
+      "summary": "discussing weekly goals and capture pipeline progress",
+      "path": "demo/wiki/projects/secondself-weekly-sync-meeting-notes.md",
+      "created": "2026-08-10T13:14:16Z",
+      "slug": "secondself-weekly-sync-meeting-notes",
+      "degree": 0
+    },
+    {
+      "id": "bccd27ed-f0a9-4429-94a0-20ea581fd600",
+      "label": "Embeddings Cost Efficiency Note",
+      "para": "resources",
+      "tags": [
+        "cost-efficiency",
+        "embeddings",
+        "secondself"
+      ],
+      "summary": "use text-embedding-3-small for cost efficiency",
+      "path": "demo/wiki/resources/embeddings-cost-efficiency-note.md",
+      "created": "2026-08-10T13:14:12Z",
+      "slug": "embeddings-cost-efficiency-note",
+      "degree": 0
+    },
+    {
+      "id": "88f69fa8-a938-4132-87c4-1a4649716b4b",
+      "label": "Hindi Note On Knowledge Management",
+      "para": "resources",
+      "tags": [
+        "knowledge-management",
+        "secondself",
+        "note-taking"
+      ],
+      "summary": "hindi note about knowledge management and second brain",
+      "path": "demo/wiki/resources/hindi-note-on-knowledge-management.md",
+      "created": "2026-08-10T13:14:13Z",
+      "slug": "hindi-note-on-knowledge-management",
+      "degree": 0
+    },
+    {
+      "id": "6b69beac-0471-4dac-be33-41f584463e01",
+      "label": "Knowledge Compounds Through Linked Notes",
+      "para": "resources",
+      "tags": [
+        "knowledge-management",
+        "graph-viz",
+        "secondself"
+      ],
+      "summary": "notes linking to each other compound knowledge",
+      "path": "demo/wiki/resources/knowledge-compounds-through-linked-notes.md",
+      "created": "2026-08-10T13:14:13Z",
+      "slug": "knowledge-compounds-through-linked-notes",
+      "degree": 0
+    },
+    {
+      "id": "569ef056-d21e-4cf1-a42e-9c86c4e2372a",
+      "label": "Para Color Coding For Graph Viz",
+      "para": "resources",
+      "tags": [
+        "graph-viz",
+        "para-method",
+        "color-coding"
+      ],
+      "summary": "para color coding for graph visualization",
+      "path": "demo/wiki/resources/para-color-coding-for-graph-viz.md",
+      "created": "2026-08-10T13:14:12Z",
+      "slug": "para-color-coding-for-graph-viz",
+      "degree": 0
+    },
+    {
+      "id": "ba3a1a65-970e-4116-88f7-882aebdd8b65",
+      "label": "Para Method Quick Reference",
+      "para": "resources",
+      "tags": [
+        "para-method",
+        "knowledge-management",
+        "secondself"
+      ],
+      "summary": "quick reference guide to the para method",
+      "path": "demo/wiki/resources/para-method-quick-reference.md",
+      "created": "2026-08-10T13:14:16Z",
+      "slug": "para-method-quick-reference",
+      "degree": 0
+    },
+    {
+      "id": "d957674c-0692-4a92-96cb-11971e34c588",
+      "label": "Personal Knowledge Management Reading List",
+      "para": "resources",
+      "tags": [
+        "personal-knowledge-management",
+        "reading-list"
+      ],
+      "summary": "list of articles to read on personal knowledge management",
+      "path": "demo/wiki/resources/personal-knowledge-management-reading-list.md",
+      "created": "2026-08-10T13:14:17Z",
+      "slug": "personal-knowledge-management-reading-list",
+      "degree": 0
+    },
+    {
+      "id": "4fb70ad8-cab4-4c6e-957d-8522bbe96c0f",
+      "label": "Personal Knowledge Management Wikipedia",
+      "para": "resources",
+      "tags": [
+        "personal-knowledge-management",
+        "knowledge-management",
+        "information-literacy"
+      ],
+      "summary": "personal knowledge management is a process of collecting information",
+      "path": "demo/wiki/resources/personal-knowledge-management-wikipedia.md",
+      "created": "2026-08-10T13:14:16Z",
+      "slug": "personal-knowledge-management-wikipedia",
+      "degree": 0
+    },
+    {
+      "id": "95582a19-67c7-4dce-aadc-47cbce4008cb",
+      "label": "Rag Prompt Guidelines",
+      "para": "resources",
+      "tags": [
+        "rag-prompt",
+        "note-taking"
+      ],
+      "summary": "guidelines for answering rag prompts",
+      "path": "demo/wiki/resources/rag-prompt-guidelines.md",
+      "created": "2026-08-10T13:14:14Z",
+      "slug": "rag-prompt-guidelines",
+      "degree": 0
+    },
+    {
+      "id": "0e2ff79c-3077-4fc7-90c1-d15ab585a32d",
+      "label": "Using Para For Secondself Captures",
+      "para": "resources",
+      "tags": [
+        "secondself",
+        "para-method",
+        "knowledge-management"
+      ],
+      "summary": "use para for secondself captures",
+      "path": "demo/wiki/resources/using-para-for-secondself-captures.md",
+      "created": "2026-08-10T13:14:12Z",
+      "slug": "using-para-for-secondself-captures",
+      "degree": 0
+    }
+  ],
+  "edges": [],
+  "meta": {
+    "generated_at": "2026-08-14T16:32:20Z",
+    "node_count": 13,
+    "edge_count": 0,
+    "explicit_edge_count": 0,
+    "semantic_edge_count": 0,
+    "skipped_files": 0,
+    "duplicate_ids": 0,
+    "orphan_edges": 0,
+    "duplicate_edges_skipped": 0
+  }
+}
