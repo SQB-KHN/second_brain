@@ -17,6 +17,21 @@ def _env_flag(name: str, default: bool = False) -> bool:
     return value.strip().lower() in {"1", "true", "yes", "on"}
 
 
+def resolve_deploy_mode() -> bool:
+    """
+    Detect deploy/demo mode.
+
+    Explicit ``DEPLOY_MODE`` env/secret wins. Otherwise, use the committed
+    ``demo/`` bundle when ``data/graph.json`` is missing (typical on Streamlit Cloud).
+    """
+    if os.getenv("DEPLOY_MODE") is not None:
+        return _env_flag("DEPLOY_MODE")
+
+    data_graph = ROOT / "data" / "graph.json"
+    demo_graph = ROOT / "demo" / "graph.json"
+    return not data_graph.is_file() and demo_graph.is_file()
+
+
 def resolve_data_dir() -> Path:
     """
     Resolve the active data directory.
@@ -29,13 +44,13 @@ def resolve_data_dir() -> Path:
         path = Path(explicit)
         return path if path.is_absolute() else (ROOT / path).resolve()
 
-    if _env_flag("DEPLOY_MODE"):
+    if resolve_deploy_mode():
         return ROOT / "demo"
 
     return ROOT / "data"
 
 
-DEPLOY_MODE = _env_flag("DEPLOY_MODE")
+DEPLOY_MODE = resolve_deploy_mode()
 DATA_DIR = resolve_data_dir()
 RAW_DIR = DATA_DIR / "raw"
 RAW_ASSETS_DIR = RAW_DIR / "assets"
@@ -61,7 +76,7 @@ LLM_MODEL = "gpt-4o-mini"
 BIDIRECTIONAL_LINKS = _env_flag("BIDIRECTIONAL_LINKS", default=True)
 
 # Public deploy safeguards (EC-DEP-003, EC-DEP-006)
-ENABLE_CAPTURE = _env_flag("ENABLE_CAPTURE", default=not DEPLOY_MODE)
+ENABLE_CAPTURE = _env_flag("ENABLE_CAPTURE", default=True)
 ENABLE_REFRESH_BRAIN = _env_flag("ENABLE_REFRESH_BRAIN", default=not DEPLOY_MODE)
 ASK_RATE_LIMIT_PER_MINUTE = max(1, int(os.getenv("ASK_RATE_LIMIT", "10")))
 CAPTURE_RATE_LIMIT_PER_MINUTE = max(1, int(os.getenv("CAPTURE_RATE_LIMIT", "5")))
