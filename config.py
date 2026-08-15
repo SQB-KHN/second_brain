@@ -17,6 +17,17 @@ def _env_flag(name: str, default: bool = False) -> bool:
     return value.strip().lower() in {"1", "true", "yes", "on"}
 
 
+def _env_int(name: str, default: int) -> int:
+    """Parse an integer env/secret value; fall back on missing or invalid input."""
+    value = os.getenv(name)
+    if value is None:
+        return default
+    try:
+        return max(1, int(str(value).strip()))
+    except (ValueError, TypeError):
+        return default
+
+
 def resolve_deploy_mode() -> bool:
     """
     Detect deploy/demo mode.
@@ -78,8 +89,8 @@ BIDIRECTIONAL_LINKS = _env_flag("BIDIRECTIONAL_LINKS", default=True)
 # Public deploy safeguards (EC-DEP-003, EC-DEP-006)
 ENABLE_CAPTURE = _env_flag("ENABLE_CAPTURE", default=True)
 ENABLE_REFRESH_BRAIN = _env_flag("ENABLE_REFRESH_BRAIN", default=not DEPLOY_MODE)
-ASK_RATE_LIMIT_PER_MINUTE = max(1, int(os.getenv("ASK_RATE_LIMIT", "10")))
-CAPTURE_RATE_LIMIT_PER_MINUTE = max(1, int(os.getenv("CAPTURE_RATE_LIMIT", "5")))
+ASK_RATE_LIMIT_PER_MINUTE = _env_int("ASK_RATE_LIMIT", 10)
+CAPTURE_RATE_LIMIT_PER_MINUTE = _env_int("CAPTURE_RATE_LIMIT", 5)
 
 MAX_FILE_SIZE_MB = 25
 URL_TIMEOUT_SECONDS = 30

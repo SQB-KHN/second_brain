@@ -25,7 +25,6 @@ from ask import AskError, AskResult, ask
 from capture import capture_file, capture_text, capture_url, ensure_meta_index, write_capture
 from config import (
     ASK_RATE_LIMIT_PER_MINUTE,
-    CAPTURE_RATE_LIMIT_PER_MINUTE,
     DATA_DIR,
     DEPLOY_MODE,
     ENABLE_CAPTURE,
@@ -36,6 +35,11 @@ from config import (
     PARA_FOLDERS,
     ROOT,
 )
+
+try:
+    from config import CAPTURE_RATE_LIMIT_PER_MINUTE
+except ImportError:
+    CAPTURE_RATE_LIMIT_PER_MINUTE = 5
 from render_graph import load_graph, render_graph_html
 
 GRAPH_COMPONENT_HEIGHT = 600
