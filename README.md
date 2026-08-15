@@ -1,8 +1,8 @@
 # SecondSelf
 
-A self-organizing personal AI knowledge system that captures, connects, visualizes, and answers using your own accumulated knowledge.
+A self-organising personal AI knowledge system that captures, connects, visualises, and answers using your own accumulated knowledge.
 
-> Not a notes app. Not a chatbot. A brain that organizes itself and answers for you.
+> Not a notes app. Not a chatbot. A brain that organises itself and answers for you.
 
 ## What it does
 
@@ -77,15 +77,15 @@ secondself/
 │   ├── embeddings/   # Vector store (Week 2)
 │   └── graph.json    # Graph export (Week 3)
 ├── logs/             # Pipeline logs
-├── capture.py        # Week 1 — capture CLI
-├── classify.py       # Week 2 — auto-classify
-├── link.py           # Week 2 — auto-link
-├── build_graph.py    # Week 3 — graph.json + Obsidian export
-├── render_graph.py   # Week 3 — interactive graph.html (vis-network)
-├── prepare_deploy.py # Phase 8 — build demo/ bundle for cloud
+├── capture.py        # Capture CLI
+├── classify.py       # Auto-classify
+├── link.py           # Auto-link
+├── build_graph.py    # Graph.json + Obsidian export
+├── render_graph.py   # Interactive graph.html (vis-network)
+├── prepare_deploy.py # Build demo/ bundle for cloud
 ├── export_obsidian.py # Obsidian vault export
-├── ask.py            # Week 4 — RAG Q&A
-├── app.py            # Week 4 — Streamlit app
+├── ask.py            # RAG Q&A
+├── app.py            # Streamlit app
 ├── config.py         # Shared configuration
 └── docs/             # Architecture and planning
 ```
@@ -100,25 +100,25 @@ secondself/
 ## Pipeline commands
 
 ```bash
-# Week 1 — capture (use ./capture.sh or activate .venv first)
+# 1 — capture (use ./capture.sh or activate .venv first)
 ./capture.sh --text "your note"
 ./capture.sh --url "https://example.com"
 ./capture.sh --file "./document.pdf"
 ./capture.sh --list
 ./capture.sh --rebuild-meta   # fix index if out of sync
 
-# Week 2 — classify (scanner ready; LLM classification in tasks 2.2+)
+# 2 — classify (scanner ready; LLM classification in tasks 2.2+)
 ./classify.sh --scan-only
 ./classify.sh
 
-# Week 2 — link (embed + auto-link)
+# 2 — link (embed + auto-link)
 ./link.sh --embed-only
 ./link.sh --link-only
 ./link.sh --threshold 0.85
 python link.py                    # also exports Obsidian vault
 python link.py --no-obsidian        # skip vault export
 
-# Week 3 — graph + Obsidian + visualization
+# 3 — graph + Obsidian + visualization
 python build_graph.py --scan-only   # walk wiki + parse frontmatter (Phase 4.1)
 python build_graph.py               # graph.json + graph.html + Obsidian vault
 python build_graph.py --no-semantic # explicit edges only
