@@ -43,6 +43,18 @@ class VerifiedVectorsTests(unittest.TestCase):
         self.assertEqual(set(chosen), {"synthetic"})
         self.assertEqual(counts, {})
 
+    def test_repo_relative_index_path_accepted(self):
+        self.entry["path"] = "data/embeddings/synthetic.npy"
+        chosen, counts = self.choose()
+        self.assertEqual(set(chosen), {"synthetic"})
+        self.assertEqual(counts, {})
+
+    def test_arbitrary_index_path_rejected(self):
+        self.entry["path"] = "../private/synthetic.npy"
+        chosen, counts = self.choose()
+        self.assertFalse(chosen)
+        self.assertEqual(counts["unknown"], 1)
+
     def test_changed_note_rejected(self):
         chosen, counts = self.choose(notes=[Note(embed_text="edited")])
         self.assertFalse(chosen)
