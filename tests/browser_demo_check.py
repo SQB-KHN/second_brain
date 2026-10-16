@@ -59,9 +59,14 @@ vis.Network = function(...args) { const network = new OriginalNetwork(...args); 
             page.locator('.filter-btn[data-para="archives"]').click()
             assert page.evaluate('window.__testNetwork.body.data.nodes.length') == 0
             page.locator('.filter-btn[data-para="resources"]').click()
-            page.evaluate('window.__testNetwork.fit({animation:false})')
+            # Stop physics before calculating coordinates; GitHub's Linux Chromium
+            # may otherwise move the node between positioning and the click.
+            page.evaluate('window.__testNetwork.stopSimulation(); window.__testNetwork.fit({animation:false})')
             point = page.evaluate('window.__testNetwork.canvasToDOM(window.__testNetwork.getPositions(["synthetic"])["synthetic"])')
-            box = page.locator('#network canvas').bounding_box()
+            # canvasToDOM is relative to the vis-network container, not necessarily
+            # the nested canvas element (their origins can differ across platforms).
+            assert page.evaluate('(p) => window.__testNetwork.getNodeAt(p)', point) == 'synthetic', 'Synthetic node did not resolve at calculated DOM point'
+            box = page.locator('#network').bounding_box()
             page.mouse.click(box['x'] + point['x'], box['y'] + point['y'])
             page.locator('#detail-content h2').wait_for(state='visible')
             assert page.locator('#detail-content h2').inner_text() == 'Synthetic Visible Note'
@@ -77,9 +82,14 @@ Path('hostile.html').write_text(render_graph_html(graph))
 ''')
             page.goto((fixture.root / 'hostile.html').as_uri())
             page.locator('#network canvas').wait_for(state='visible')
-            page.evaluate('window.__testNetwork.fit({animation:false})')
+            # Stop physics before calculating coordinates; GitHub's Linux Chromium
+            # may otherwise move the node between positioning and the click.
+            page.evaluate('window.__testNetwork.stopSimulation(); window.__testNetwork.fit({animation:false})')
             point = page.evaluate('window.__testNetwork.canvasToDOM(window.__testNetwork.getPositions(["synthetic"])["synthetic"])')
-            box = page.locator('#network canvas').bounding_box()
+            # canvasToDOM is relative to the vis-network container, not necessarily
+            # the nested canvas element (their origins can differ across platforms).
+            assert page.evaluate('(p) => window.__testNetwork.getNodeAt(p)', point) == 'synthetic', 'Synthetic node did not resolve at calculated DOM point'
+            box = page.locator('#network').bounding_box()
             page.mouse.move(box['x'] + point['x'], box['y'] + point['y'])
             page.wait_for_timeout(500)  # Actual tooltip delay is 120 ms.
             page.mouse.click(box['x'] + point['x'], box['y'] + point['y'])
