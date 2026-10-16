@@ -22,30 +22,44 @@ PARAS = ("projects", "areas", "resources", "archives")
 
 
 def _embed_text(path: Path) -> tuple[str, str]:
-    raw = path.read_text(encoding="utf-8")
-    match = re.match(r"\A---\s*\n(.*?)\n---\s*\n", raw, re.DOTALL)
-    if not match:
-        raise ValueError("Missing YAML frontmatter")
-    meta = yaml.safe_load(match.group(1))
-    if not isinstance(meta, dict) or not str(meta.get("id", "")).strip():
-        raise ValueError("Missing note id")
-    body = raw[match.end():]
-    title = str(meta.get("title") or path.stem).strip()
-    summary = str(meta.get("summary") or "").strip()
-    tags = meta.get("tags") or []
-    if not isinstance(tags, list):
-        tags = []
-    chunks = []
-    if title:
-        chunks.append(f"Title: {title}")
-    if summary:
-        chunks.append(f"Summary: {summary}")
-    if tags:
-        chunks.append(f"Tags: {', '.join(map(str, tags))}")
-    if body.strip():
-        chunks.append(body.strip())
-    return str(meta["id"]), "\n\n".join(chunks).strip()
+    """Mirror the current link.py embedding input exactly (read-only).
 
+    This is a compatibility bridge, not a future canonicalization policy:
+    generated Related sections are currently still part of embedding text.
+    """
+    raw = path.read_text(encoding="utf-8")
+    if not raw.startswith("---"):
+        raise ValueError("Missing YAML frontmatter")
+    pieces = raw.split("---", 2)
+    if len(pieces) < 3:
+        raise ValueError("Invalid YAML frontmatter")
+    meta = yaml.safe_load(pieces[1])
+    if not isinstance(meta, dict) or any(not meta.get(k) for k in ("id", "para", "summary")):
+        raise ValueError("Missing required frontmatter fields")
+    body = pieces[2].lstrip("\n")
+    title = next((line.strip()[2:].strip() for line in body.splitlines()
+                  if line.strip().startswith("# ")), None)
+    if title is None:
+        slug = path.stem.replace("-", " ").strip()
+        title = slug.title() if slug else path.name
+    raw_tags = meta.get("tags")
+    tags = []
+    if isinstance(raw_tags, list):
+        for tag in raw_tags:
+            val = str(tag).strip()
+            if val and val not in tags:
+                tags.append(val)
+    summary = str(meta.get("summary", "")).strip()
+    sections = []
+    if title:
+        sections.append(f"Title: {title}")
+    if summary:
+        sections.append(f"Summary: {summary}")
+    if tags:
+        sections.append(f"Tags: {', '.join(tags)}")
+    if body.strip():
+        sections.append(body.strip())
+    return str(meta["id"]), "\n\n".join(sections).strip()
 
 def audit(source_dir: Path, index_path: Path, model: str) -> dict[str, object]:
     """Conservative audit, no mutations. Treat identity and parse errors as unknown."""
