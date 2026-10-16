@@ -42,7 +42,10 @@ def select_verified_vectors(
         if entry is not None and (
             not isinstance(entry, dict)
             or entry.get("wiki_path") != str(note.wiki_path)
-            or entry.get("path") != (vector_dir / (note_id + ".npy")).as_posix()
+            or entry.get("path") not in (
+                (vector_dir / (note_id + ".npy")).as_posix(),
+                (Path("data") / "embeddings" / (note_id + ".npy")).as_posix(),
+            )
         ):
             counts["unknown"] += 1
             continue
