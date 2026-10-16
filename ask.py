@@ -36,6 +36,8 @@ from config import (
     GROQ_LLM_MODEL,
     LLM_MODEL,
     MIN_RETRIEVAL_SCORE,
+    EMBEDDINGS_DIR,
+    EMBEDDING_MODEL,
     OPENAI_API_KEY,
     PIPELINE_LOG,
     RAG_MAX_CONTEXT_CHARS,
@@ -48,10 +50,11 @@ from link import (
     cosine_similarity,
     embed_text,
     load_embedding_index,
-    load_embedding_vectors,
     require_embedding_api_key,
     scan_wiki_notes,
 )
+
+from tools.verified_vectors import select_verified_vectors
 
 MAX_LLM_RETRIES = 3
 
@@ -250,19 +253,27 @@ def ask(
             sources=[],
         )
 
-    vectors = load_embedding_vectors(index)
-    if not vectors:
-        return AskResult(
-            question=cleaned,
-            answer="Brain not indexed yet. Run link.py first.",
-            sources=[],
-        )
-
     notes = scan_wiki_notes()
     if not notes:
         return AskResult(
             question=cleaned,
             answer="No notes in your knowledge base.",
+            sources=[],
+        )
+
+    # Fail closed: never retrieve from legacy, stale, corrupted, or unmatched
+    # vectors. This read-only selector does not call link.py's destructive
+    # validate_embedding_file implementation.
+    vectors, excluded = select_verified_vectors(
+        notes, index, EMBEDDINGS_DIR, EMBEDDING_MODEL
+    )
+    if not vectors:
+        LOGGER.warning("No verified embeddings available; exclusion counts: %s", excluded)
+        return AskResult(
+            question=cleaned,
+            answer=("No verified embeddings available. Existing embeddings may "
+                    "lack provenance metadata or be stale. Ask is unavailable "
+                    "until a separately approved embedding refresh."),
             sources=[],
         )
 
