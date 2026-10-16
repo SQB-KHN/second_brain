@@ -65,7 +65,22 @@ vis.Network = function(...args) { const network = new OriginalNetwork(...args); 
             point = page.evaluate('window.__testNetwork.canvasToDOM(window.__testNetwork.getPositions(["synthetic"])["synthetic"])')
             # canvasToDOM is relative to the vis-network container, not necessarily
             # the nested canvas element (their origins can differ across platforms).
-            assert page.evaluate('(p) => window.__testNetwork.getNodeAt(p)', point) == 'synthetic', 'Synthetic node did not resolve at calculated DOM point'
+            hit = page.evaluate('(p) => window.__testNetwork.getNodeAt(p)', point)
+            if hit != 'synthetic':
+                diagnostics = page.evaluate("""(p) => {
+                    const n = window.__testNetwork;
+                    const outer = document.querySelector('#network').getBoundingClientRect();
+                    const canvas = document.querySelector('#network canvas').getBoundingClientRect();
+                    return {point:p, hit:n.getNodeAt(p), position:n.getPositions(['synthetic']),
+                        scale:n.getScale(), viewPosition:n.getViewPosition(),
+                        container:{x:outer.x,y:outer.y,width:outer.width,height:outer.height},
+                        canvas:{x:canvas.x,y:canvas.y,width:canvas.width,height:canvas.height},
+                        devicePixelRatio:window.devicePixelRatio,
+                        physicalNodes:n.body.data.nodes.getIds()};
+                }""", point)
+                print('GRAPH_CLICK_DIAGNOSTICS', json.dumps(diagnostics), flush=True)
+                page.screenshot(path='/tmp/secondself-graph-click-failure.png')
+            assert hit == 'synthetic', 'Synthetic node did not resolve at calculated DOM point'
             box = page.locator('#network').bounding_box()
             page.mouse.click(box['x'] + point['x'], box['y'] + point['y'])
             page.locator('#detail-content h2').wait_for(state='visible')
