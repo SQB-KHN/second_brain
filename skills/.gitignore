@@ -1,0 +1,13 @@
+.DS_Store
+._*
+.Spotlight-V100
+.Trashes
+Thumbs.db
+desktop.ini
+
+# working files, not part of the library
+_source-zips/
+
+# working notes for future Claude Code sessions, not part of the published library
+CLAUDE.md
+
