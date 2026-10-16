@@ -1,0 +1,51 @@
+name: Unpack reviewed skill archive
+on:
+  push:
+    branches: [organize-claude-skills-library]
+    paths: ['.github/workflows/unpack-skills.yml']
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  unpack:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: organize-claude-skills-library
+      - name: Validate and unpack skill markdown
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path, PurePosixPath
+          import zipfile
+          archive = Path('claude-skills-library-main.zip')
+          output = Path('skills')
+          with zipfile.ZipFile(archive) as z:
+              files = [i for i in z.infolist() if not i.is_dir()]
+              if len(files) > 250 or sum(i.file_size for i in files) > 10_000_000:
+                  raise SystemExit('Unexpected archive size')
+              for item in files:
+                  parts = PurePosixPath(item.filename).parts
+                  if len(parts) < 2 or parts[0] != 'claude-skills-library-main' or '..' in parts:
+                      raise SystemExit('Unsafe archive entry')
+                  rel = Path(*parts[1:])
+                  if rel.suffix not in ('.md', '.py') and rel.name != '.gitignore':
+                      raise SystemExit('Unexpected file type')
+                  dest = output / rel
+                  dest.parent.mkdir(parents=True, exist_ok=True)
+                  dest.write_bytes(z.read(item))
+          count = len(list(output.glob('*-skills/*/SKILL.md')))
+          assert count == 55, f'Expected 55 skills, found {count}'
+          print(f'Unpacked {count} skills in {len(list(output.glob("*-skills")))} domains')
+          PY
+      - name: Commit unpacked skills on review branch
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add skills/
+          if ! git diff --cached --quiet; then
+            git commit -m "Unpack 55 AI skills into browsable folders"
+            git push origin HEAD:organize-claude-skills-library
+          fi
