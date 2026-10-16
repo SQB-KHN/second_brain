@@ -166,16 +166,31 @@ Public deploy uses the committed `demo/` folder (sample notes only — never you
 cd secondself
 source .venv/bin/activate
 
-# Build local brain first
-./link.sh              # needs OPENAI_API_KEY for embeddings
-./build_graph.sh
-
-# Copy sanitized notes + graph into demo/
+# Build only explicitly approved sample notes
 python prepare_deploy.py
 # or: ./prepare_deploy.sh
 ```
 
-Commit and push `demo/`, `app.py`, `ask.py`, and the rest of the code.
+`demo-manifest.json` defaults to an empty approval list. After reviewing the entire
+sample (including frontmatter, URLs, and metadata), add an entry with `path`
+(relative to `data/wiki/`, e.g. `resources/synthetic-example.md`) and `sha256`
+(the SHA-256 digest of the exact file bytes). Changed samples need renewed review
+and approval. Do not approve private notes or reuse hashes without review.
+
+The publisher reads only listed notes, rebuilds the index and explicit graph,
+and replaces `demo/` only after staging validation. Missing or changed samples,
+excluded wiki references, and local Markdown artifact links fail closed.
+Embeddings are intentionally omitted until a separate provenance-safe build is
+available; demo Ask will report that the brain is not indexed. `--skip-rebuild`
+is accepted for backwards compatibility, issues a deprecation warning, and still
+performs validated rebuilding of the graph and index. The root `graph.html` and
+private pipeline are untouched.
+Use `--source`, `--dest`, and `--manifest` for isolated local builds. Run only one
+publisher per destination, with source/manifest files held stable during the build.
+
+Existing committed demo data is **not retroactively approved** by this change.
+Review a newly generated bundle before any separately authorized publication.
+See [the design and readiness review](docs/secure-demo-publication.md).
 
 ### 2. Streamlit Cloud settings
 

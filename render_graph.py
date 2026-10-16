@@ -17,6 +17,7 @@ For Streamlit (Phase 7):
 from __future__ import annotations
 
 import argparse
+import html
 import json
 import logging
 import sys
@@ -140,7 +141,7 @@ def map_node_to_vis(node: dict[str, Any]) -> dict[str, Any]:
     return {
         "id": node["id"],
         "label": label,
-        "title": hover,
+        "title": html.escape(hover),
         "para": para,
         "color": {
             "background": color,
@@ -180,7 +181,7 @@ def map_edge_to_vis(edge: dict[str, Any]) -> dict[str, Any]:
     return {
         "from": edge["source"],
         "to": edge["target"],
-        "title": title,
+        "title": html.escape(title),
         "arrows": {"to": {"enabled": True, "scaleFactor": 0.45}},
         "color": {"color": line_color, "opacity": 0.75, "highlight": "#f8fafc"},
         "smooth": {"type": "dynamic"},
@@ -216,9 +217,14 @@ def render_graph_html(
         graph = load_graph(graph_file or GRAPH_FILE)
 
     payload = prepare_vis_payload(graph)
+    # JSON quoting alone does not protect an HTML script raw-text context.
+    # Escape HTML delimiters and JS line separators without changing the data.
     graph_json = json.dumps(payload, ensure_ascii=False)
+    for char, escaped in (("&", "\\u0026"), ("<", "\\u003c"), (">", "\\u003e"),
+                          ("\u2028", "\\u2028"), ("\u2029", "\\u2029")):
+        graph_json = graph_json.replace(char, escaped)
     meta = payload.get("meta") or {}
-    generated_at = meta.get("generated_at", "unknown")
+    generated_at = html.escape(str(meta.get("generated_at", "unknown")))
 
     return f"""<!DOCTYPE html>
 <html lang="en">
