@@ -23,7 +23,7 @@ class FreshnessAuditTests(unittest.TestCase):
         self.emb.mkdir()
         self.index = self.emb / "index.json"
         self.note = self.notes / "sample.md"
-        self.note.write_text("---\nid: sample\ntitle: Sample\nsummary: Summary\ntags: [demo]\n---\nBody\n")
+        self.note.write_text("---\nid: sample\npara: resources\ntitle: Sample\nsummary: Summary\ntags: [demo]\n---\nBody\n")
         self.index.write_text("{}")
 
     def test_missing(self):
