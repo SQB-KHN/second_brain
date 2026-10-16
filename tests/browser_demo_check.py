@@ -62,6 +62,12 @@ vis.Network = function(...args) { const network = new OriginalNetwork(...args); 
             # Stop physics before calculating coordinates; GitHub's Linux Chromium
             # may otherwise move the node between positioning and the click.
             page.evaluate('window.__testNetwork.stopSimulation(); window.__testNetwork.fit({animation:false})')
+            page.evaluate('window.__testNetwork.redraw()')
+            page.wait_for_function("""() => {
+                const n = window.__testNetwork;
+                const p = n.canvasToDOM(n.getPositions(['synthetic']).synthetic);
+                return n.getNodeAt(p) === 'synthetic';
+            }""", timeout=12000)
             point = page.evaluate('window.__testNetwork.canvasToDOM(window.__testNetwork.getPositions(["synthetic"])["synthetic"])')
             # canvasToDOM is relative to the vis-network container, not necessarily
             # the nested canvas element (their origins can differ across platforms).
@@ -100,6 +106,12 @@ Path('hostile.html').write_text(render_graph_html(graph))
             # Stop physics before calculating coordinates; GitHub's Linux Chromium
             # may otherwise move the node between positioning and the click.
             page.evaluate('window.__testNetwork.stopSimulation(); window.__testNetwork.fit({animation:false})')
+            page.evaluate('window.__testNetwork.redraw()')
+            page.wait_for_function("""() => {
+                const n = window.__testNetwork;
+                const p = n.canvasToDOM(n.getPositions(['synthetic']).synthetic);
+                return n.getNodeAt(p) === 'synthetic';
+            }""", timeout=12000)
             point = page.evaluate('window.__testNetwork.canvasToDOM(window.__testNetwork.getPositions(["synthetic"])["synthetic"])')
             # canvasToDOM is relative to the vis-network container, not necessarily
             # the nested canvas element (their origins can differ across platforms).
