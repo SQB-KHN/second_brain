@@ -6,6 +6,7 @@ This module does not import link.py because its legacy validation can unlink fil
 from __future__ import annotations
 
 from collections import Counter
+import io
 from pathlib import Path
 from typing import Any, Iterable
 import numpy as np
@@ -41,8 +42,10 @@ def select_verified_vectors(
         entry = index.get(note_id)
         if entry is not None and (
             not isinstance(entry, dict)
+            or ("note_id" in entry and entry["note_id"] != note_id)
             or entry.get("wiki_path") != str(note.wiki_path)
             or entry.get("path") not in (
+                note_id + ".npy",
                 (vector_dir / (note_id + ".npy")).as_posix(),
                 (Path("data") / "embeddings" / (note_id + ".npy")).as_posix(),
             )
@@ -57,11 +60,10 @@ def select_verified_vectors(
             try:
                 content = path.read_bytes()
                 digest = vector_fingerprint(content)
-                with path.open("rb") as stream:
-                    candidate = np.load(stream, allow_pickle=False)
+                candidate = np.load(io.BytesIO(content), allow_pickle=False)
                 if (candidate.ndim == 1 and candidate.size > 0
-                        and np.issubdtype(candidate.dtype, np.number)
-                        and np.isfinite(candidate).all()):
+                        and np.issubdtype(candidate.dtype, np.floating)
+                        and np.isfinite(candidate).all() and np.linalg.norm(candidate) > 0):
                     vector = candidate
                     dimensions = int(candidate.size)
                 else:

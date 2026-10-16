@@ -43,7 +43,7 @@ except ImportError:
 from render_graph import load_graph, render_graph_html
 
 GRAPH_COMPONENT_HEIGHT = 600
-PIPELINE_SCRIPTS = ("classify.py", "link.py", "build_graph.py")
+PIPELINE_SCRIPTS = ("refresh.py",)
 
 
 def load_graph_stats() -> dict[str, Any]:
@@ -70,7 +70,7 @@ def count_nodes_by_para(nodes: list[dict[str, Any]], para: str) -> int:
 def run_pipeline_step(script_name: str) -> tuple[bool, str]:
     script_path = ROOT / script_name
     result = subprocess.run(
-        [sys.executable, str(script_path)],
+        [sys.executable, str(script_path), "refresh"],
         cwd=ROOT,
         capture_output=True,
         text=True,
@@ -263,20 +263,10 @@ def main() -> None:
             st.session_state.capture_busy = False
             if ok:
                 st.success(message)
-                if ENABLE_REFRESH_BRAIN:
-                    st.session_state.refresh_busy = True
-                    with st.spinner("Running classify → link → build_graph..."):
-                        refresh_ok, logs = refresh_brain()
-                    st.session_state.refresh_busy = False
-                    if refresh_ok:
-                        st.success("Brain refreshed with your new capture.")
-                        st.rerun()
-                    else:
-                        st.warning(
-                            "Capture saved, but refresh failed. "
-                            "Use Refresh brain in the sidebar."
-                        )
-                        st.code("\n\n".join(logs), language="text")
+                st.info(
+                    "Capture queued for classification. Review classification and embedding "
+                    "API costs before processing it; see docs/phase2-operations.md."
+                )
             else:
                 st.error(message)
     else:
@@ -310,7 +300,7 @@ def main() -> None:
             refresh_disabled = busy
             if st.button("Refresh brain", disabled=refresh_disabled, use_container_width=True):
                 st.session_state.refresh_busy = True
-                with st.spinner("Running classify → link → build_graph..."):
+                with st.spinner("Refreshing verified knowledge artifacts..."):
                     ok, logs = refresh_brain()
                 st.session_state.refresh_busy = False
                 if ok:

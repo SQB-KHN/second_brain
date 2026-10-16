@@ -72,9 +72,19 @@ class WikiNote:
     links: list[str]
     embedding_id: str
 
+    root: Path | None = None
+
+    @property
+    def slug(self) -> str:
+        return self.path.stem
+
+    @property
+    def created(self) -> str:
+        return str(self.frontmatter.get("created", ""))
+
     @property
     def wiki_path(self) -> str:
-        return self.path.relative_to(ROOT).as_posix()
+        return self.path.relative_to(self.root or ROOT).as_posix()
 
     @property
     def embed_text(self) -> str:
@@ -354,7 +364,6 @@ def validate_embedding_file(note_id: str) -> bool:
         return True
     except (OSError, ValueError) as exc:
         LOGGER.warning("Corrupt embedding %s (%s); will re-embed", path.name, exc)
-        path.unlink(missing_ok=True)
         return False
 
 
@@ -922,6 +931,12 @@ def print_note_summary(note: WikiNote) -> None:
 
 def main(argv: list[str] | None = None) -> int:
     args = parse_args(argv)
+    if not args.scan_only and not args.similarity_only:
+        if args.note_id or args.embed_only or args.no_bidirectional:
+            print("Use refresh.py dry-run/refresh for transactional corpus updates; per-note, embed-only and directional link modes are retired.", file=sys.stderr)
+            return 1
+        from refresh import main as refresh_main
+        return refresh_main(["refresh", "--threshold", str(args.threshold)])
     ensure_directories()
 
     notes = scan_wiki_notes()
@@ -949,7 +964,8 @@ def main(argv: list[str] | None = None) -> int:
         return 0
 
     if args.similarity_only:
-        vectors = load_embedding_vectors()
+        from refresh import verified_active_vectors
+        vectors = verified_active_vectors()[1]
         if not vectors:
             LOGGER.error("No saved embeddings found. Run link.py --embed-only first.")
             print("No saved embeddings found. Run ./link.sh --embed-only first.", file=sys.stderr)

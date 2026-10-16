@@ -71,3 +71,6 @@ data/embeddings/**
 
 # Generated Obsidian vault (sibling to secondself/)
 ../secondself-obsidian-vault/
+
+# Transactional local knowledge generations
+data/knowledge/

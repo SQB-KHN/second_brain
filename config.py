@@ -40,7 +40,8 @@ def resolve_deploy_mode() -> bool:
 
     data_graph = ROOT / "data" / "graph.json"
     demo_graph = ROOT / "demo" / "graph.json"
-    return not data_graph.is_file() and demo_graph.is_file()
+    knowledge_pointer = ROOT / "data" / "knowledge" / "current.json"
+    return not data_graph.is_file() and not knowledge_pointer.is_file() and demo_graph.is_file()
 
 
 def resolve_data_dir() -> Path:
@@ -82,7 +83,7 @@ RAG_TOP_K = 5
 MIN_RETRIEVAL_SCORE = 0.5
 RAG_MAX_EXCERPT_CHARS = 1200
 RAG_MAX_CONTEXT_CHARS = 8000
-EMBEDDING_MODEL = "text-embedding-3-small"
+EMBEDDING_MODEL = os.getenv("EMBEDDING_MODEL", "text-embedding-3-small")
 LLM_MODEL = "gpt-4o-mini"
 BIDIRECTIONAL_LINKS = _env_flag("BIDIRECTIONAL_LINKS", default=True)
 

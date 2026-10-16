@@ -245,28 +245,37 @@ def ask(
     if not cleaned:
         raise AskError("Question cannot be empty.")
 
-    index = load_embedding_index()
-    if not index:
-        return AskResult(
-            question=cleaned,
-            answer="Brain not indexed yet. Run link.py first.",
-            sources=[],
-        )
+    from refresh import current, verified_active_vectors
+    from config import DATA_DIR
+    try:
+        generation = current(DATA_DIR)
+        if generation:
+            notes, vectors, excluded = verified_active_vectors(DATA_DIR)
+        else:
+            index = load_embedding_index()
+            if not index:
+                return AskResult(
+                    question=cleaned,
+                    answer="Brain not indexed yet. Run refresh.py dry-run first.",
+                    sources=[],
+                )
 
-    notes = scan_wiki_notes()
-    if not notes:
-        return AskResult(
-            question=cleaned,
-            answer="No notes in your knowledge base.",
-            sources=[],
-        )
+            notes = scan_wiki_notes()
+            if not notes:
+                return AskResult(
+                    question=cleaned,
+                    answer="No notes in your knowledge base.",
+                    sources=[],
+                )
 
-    # Fail closed: never retrieve from legacy, stale, corrupted, or unmatched
-    # vectors. This read-only selector does not call link.py's destructive
-    # validate_embedding_file implementation.
-    vectors, excluded = select_verified_vectors(
-        notes, index, EMBEDDINGS_DIR, EMBEDDING_MODEL
-    )
+            # Fail closed: never retrieve from legacy, stale, corrupted, or unmatched
+            # vectors. This read-only selector does not call link.py's destructive
+            # validate_embedding_file implementation.
+            vectors, excluded = select_verified_vectors(
+                notes, index, EMBEDDINGS_DIR, EMBEDDING_MODEL
+            )
+    except (ValueError, OSError, KeyError, TypeError):
+        return AskResult(cleaned, "Knowledge artifacts failed verification. Run refresh.py status and recover or refresh.", [])
     if not vectors:
         LOGGER.warning("No verified embeddings available; exclusion counts: %s", excluded)
         return AskResult(
@@ -278,6 +287,9 @@ def ask(
         )
 
     question_vector = embed(cleaned)
+    if (question_vector.ndim != 1 or not np.isfinite(question_vector).all()
+            or any(vector.shape != question_vector.shape for vector in vectors.values())):
+        raise AskError("Query embedding dimensions differ from the verified generation. Check the model and refresh.")
     candidates = retrieve_top_k(question_vector, notes, vectors, top_k=top_k)
     relevant = [(note, score) for note, score in candidates if score >= min_score]
 

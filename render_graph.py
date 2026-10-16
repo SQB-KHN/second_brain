@@ -66,6 +66,15 @@ LOGGER = setup_logging()
 
 def load_graph(graph_file: Path) -> dict[str, Any]:
     """Load graph.json or return an empty graph payload."""
+    from config import DATA_DIR, DEPLOY_MODE
+    if not DEPLOY_MODE and graph_file == GRAPH_FILE:
+        from refresh import active_graph
+        try:
+            graph = active_graph(DATA_DIR)
+            if graph is not None:
+                return graph
+        except (ValueError, OSError, KeyError, TypeError):
+            return {"nodes": [], "edges": [], "meta": {"error": "verification_failed"}}
     if not graph_file.is_file():
         LOGGER.warning("Graph file not found: %s", graph_file)
         return {
