@@ -73,6 +73,8 @@ def load_graph(graph_file: Path) -> dict[str, Any]:
             graph = active_graph(DATA_DIR)
             if graph is not None:
                 return graph
+            return {"nodes": [], "edges": [], "meta": {
+                "error": "missing_generation", "message": "Run an approved knowledge refresh."}}
         except (ValueError, OSError, KeyError, TypeError):
             return {"nodes": [], "edges": [], "meta": {"error": "verification_failed"}}
     if not graph_file.is_file():

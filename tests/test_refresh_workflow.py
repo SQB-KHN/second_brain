@@ -248,6 +248,16 @@ class RefreshWorkflowTests(unittest.TestCase):
         self.assertEqual(set(r.verified_active_vectors(self.root, 'replacement-model')[1]), {'a'})
         self.assertFalse(r.verified_active_vectors(self.root)[1])
 
+    def test_local_legacy_graph_is_not_a_verified_generation(self):
+        path = self.root / 'graph.json'
+        path.write_text(json.dumps({'nodes': [{'id': 'stale'}], 'edges': [], 'meta': {}}))
+        with (patch.object(config, 'DATA_DIR', self.root),
+              patch.object(config, 'DEPLOY_MODE', False),
+              patch.object(render_graph, 'GRAPH_FILE', path)):
+            graph = render_graph.load_graph(path)
+        self.assertEqual(graph['nodes'], [])
+        self.assertEqual(graph['meta']['error'], 'missing_generation')
+
     def test_status_and_dry_run_do_not_mutate(self):
         self.note()
         before = {p: p.read_bytes() for p in self.root.rglob('*') if p.is_file()}

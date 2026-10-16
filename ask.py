@@ -274,6 +274,9 @@ def ask(
             vectors, excluded = select_verified_vectors(
                 notes, index, EMBEDDINGS_DIR, EMBEDDING_MODEL
             )
+            # Provenance alone cannot establish a complete Ask/Graph generation.
+            if vectors:
+                vectors, excluded = {}, {"missing_generation": len(notes)}
     except (ValueError, OSError, KeyError, TypeError):
         return AskResult(cleaned, "Knowledge artifacts failed verification. Run refresh.py status and recover or refresh.", [])
     if not vectors:
