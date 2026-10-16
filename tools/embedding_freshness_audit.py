@@ -113,7 +113,7 @@ def audit(source_dir: Path, index_path: Path, model: str) -> dict[str, object]:
             except (OSError, ValueError, yaml.YAMLError, TypeError, KeyError):
                 status = "unknown"
             results[status] += 1
-    results["orphan_index_entries"] = max(0, len(raw_index) - len(seen))
+    results["orphan_index_entries"] = len(set(raw_index) - seen)
     return {name: results[name] for name in
             ("notes", "current", "stale", "missing", "legacy_unknown", "unknown",
              "orphan_index_entries")}

@@ -505,12 +505,13 @@ def collect_semantic_edges(
 ) -> int:
     """Phase 4.4 — add semantic edges from embedding cosine similarity."""
     try:
-        from link import compute_all_similarity_pairs, filter_pairs_by_threshold, load_embedding_vectors
+        from link import compute_all_similarity_pairs, filter_pairs_by_threshold
+        from refresh import verified_active_vectors
     except ImportError as exc:
         LOGGER.warning("Could not import link module for semantic edges (%s)", exc)
         return 0
 
-    vectors = load_embedding_vectors()
+    vectors = verified_active_vectors()[1]
     graph_note_vectors = {
         note_id: vector for note_id, vector in vectors.items() if note_id in note_ids
     }

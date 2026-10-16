@@ -18,6 +18,13 @@ class AskFreshnessGateTests(unittest.TestCase):
         self.assertIn("No verified embeddings", outcome.answer)
         selector.assert_called_once()
 
+    def test_vectors_without_complete_generation_do_not_trigger_api(self):
+        with (patch.object(ask, "load_embedding_index", return_value={"x": {}}),
+              patch.object(ask, "scan_wiki_notes", return_value=[object()]),
+              patch.object(ask, "select_verified_vectors", return_value=({"x": np.array([1.])}, {})),
+              patch.object(ask, "embed", side_effect=AssertionError("Complete generation required"))):
+            self.assertEqual(ask.ask("synthetic question").sources, [])
+
     def test_empty_index_keeps_existing_not_indexed_message(self):
         with (patch.object(ask, "load_embedding_index", return_value={}),
               patch.object(ask, "embed", side_effect=AssertionError("API not expected"))):

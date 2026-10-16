@@ -22,6 +22,7 @@ class DemoRuntimeTests(unittest.TestCase):
         self.root = Path(self.tmp.name).resolve()
         for path in REPO.glob('*.py'):
             shutil.copyfile(path, self.root / path.name)
+        shutil.copytree(REPO / 'tools', self.root / 'tools', ignore=shutil.ignore_patterns('__pycache__'))
         shutil.copyfile(REPO / 'prepare_deploy.sh', self.root / 'prepare_deploy.sh')
         self.env = {'PATH': os.environ.get('PATH', ''), 'HOME': str(self.root),
                     'DEPLOY_MODE': 'true', 'OPENAI_API_KEY': 'synthetic-no-network-key',

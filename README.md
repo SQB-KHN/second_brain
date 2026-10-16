@@ -97,6 +97,8 @@ secondself/
 - [Implementation plan](docs/implementation-plan.md)
 - [Edge cases](docs/edge-case.md)
 
+Phase 2 operational commands, migration, cost approval and recovery: [operations guide](docs/phase2-operations.md).
+
 ## Pipeline commands
 
 ```bash
@@ -107,16 +109,16 @@ secondself/
 ./capture.sh --list
 ./capture.sh --rebuild-meta   # fix index if out of sync
 
-# 2 — classify (scanner ready; LLM classification in tasks 2.2+)
+# 2 — classification is a separate, intentional LLM API operation
 ./classify.sh --scan-only
-./classify.sh
+./classify.sh                     # sends queued captures to configured provider
 
-# 2 — link (embed + auto-link)
-./link.sh --embed-only
-./link.sh --link-only
-./link.sh --threshold 0.85
-python link.py                    # also exports Obsidian vault
-python link.py --no-obsidian        # skip vault export
+# 3 — inspect the local knowledge update plan (no network)
+python refresh.py status --data-dir data
+python refresh.py dry-run --data-dir data
+# Follow docs/phase2-operations.md to approve a model, plan and cost budget.
+# A refresh needing no embeddings (e.g. deletion/rename) is entirely local:
+python refresh.py refresh --data-dir data
 
 # 3 — graph + Obsidian + visualization
 python build_graph.py --scan-only   # walk wiki + parse frontmatter (Phase 4.1)
@@ -142,9 +144,9 @@ streamlit run app.py              # http://localhost:8501
 cd secondself
 source .venv/bin/activate
 
-# Index your notes first (required for Ask)
-./link.sh
-./build_graph.sh
+# Inspect and approve the initial embedding refresh; see Phase 2 operations.
+python refresh.py dry-run --data-dir data
+# After a successful approved refresh, the UI reads the verified generation.
 
 # Launch Streamlit UI (graph + ask)
 streamlit run app.py
@@ -153,7 +155,7 @@ streamlit run app.py
 Open **http://localhost:8501** — graph on top, ask bar below, **Refresh brain** in the sidebar.
 
 Requires:
-- `OPENAI_API_KEY` for embeddings (`link.py`) and optionally for RAG answers
+- `OPENAI_API_KEY` for approved embeddings (`refresh.py`) and optionally for RAG answers
 - `GROQ_API_KEY` works for RAG answers if OpenAI is not set for chat
 
 ## Deploy to Streamlit Cloud (Phase 8)

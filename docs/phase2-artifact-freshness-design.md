@@ -1,6 +1,6 @@
 # Phase 2 — Embedding freshness and knowledge consistency
 
-Status: **Design proposal only. Not implemented.** Phase 1 secure demo publication is already merged. This phase must not modify or publish `demo/`, private notes, or existing embedding artifacts as part of development tests.
+Status: **Implemented on phase2-functional-integration.** See [operations](phase2-operations.md) for the final contract and recovery commands. The remainder records the original proposal. Phase 1 secure demo publication is already merged. This phase must not modify or publish `demo/`, private notes, or existing embedding artifacts as part of development tests.
 
 ## Problem and current evidence
 
@@ -63,4 +63,4 @@ Status: **Design proposal only. Not implemented.** Phase 1 secure demo publicati
 
 ## Safe operating procedure
 
-Implement each work package in its own pull request. Start with **2A** only, using synthetic fixtures and no API calls. Review actual diffs and CI logs before merging; no deployment, private data migration, deletion, or mass re-embedding without explicit approval.
+The release integrates all work packages in one draft pull request, per the release request, using synthetic fixtures and no embedding API calls. Review actual diffs and CI logs before merging; no deployment, private data migration, deletion, or mass re-embedding without explicit approval.
