@@ -31,6 +31,8 @@ except ImportError:
     raise SystemExit(1)
 
 from config import (
+    XAI_API_KEY,
+    XAI_LLM_MODEL,
     GROQ_API_KEY,
     GROQ_BASE_URL,
     GROQ_LLM_MODEL,
@@ -48,9 +50,7 @@ from config import (
 from link import (
     WikiNote,
     cosine_similarity,
-    embed_text,
     load_embedding_index,
-    require_embedding_api_key,
     scan_wiki_notes,
 )
 
@@ -111,18 +111,23 @@ LOGGER = setup_logging()
 
 def get_llm_client() -> tuple[OpenAI, str]:
     """Return an LLM client for RAG synthesis."""
+    if XAI_API_KEY:
+        return OpenAI(api_key=XAI_API_KEY, base_url="https://api.x.ai/v1"), XAI_LLM_MODEL
     if OPENAI_API_KEY:
         return OpenAI(api_key=OPENAI_API_KEY), LLM_MODEL
     if GROQ_API_KEY:
         LOGGER.info("Using Groq API for RAG synthesis")
         return OpenAI(api_key=GROQ_API_KEY, base_url=GROQ_BASE_URL), GROQ_LLM_MODEL
-    raise AskError("API key not configured. Set OPENAI_API_KEY or GROQ_API_KEY in .env.")
+    raise AskError("API key not configured. Set XAI_API_KEY, OPENAI_API_KEY or GROQ_API_KEY in .env.")
 
 
 def embed(question: str) -> np.ndarray:
-    """Embed a question using the same model as link.py (Phase 7.1)."""
-    client = require_embedding_api_key()
-    return embed_text(client, question.strip())
+    """Embed a question with the same provider and model as transactional refresh."""
+    from tools.embedding_provider import create_embedder
+    try:
+        return create_embedder()(question.strip())
+    except (ValueError, OSError, APIConnectionError, APIStatusError) as exc:
+        raise AskError(str(exc)) from exc
 
 
 def retrieve_top_k(
@@ -285,12 +290,13 @@ def ask(
             question=cleaned,
             answer=("No verified embeddings available. Existing embeddings may "
                     "lack provenance metadata or be stale. Ask is unavailable "
-                    "until a separately approved embedding refresh."),
+                    "until refresh.py refresh completes."),
             sources=[],
         )
 
     question_vector = embed(cleaned)
     if (question_vector.ndim != 1 or not np.isfinite(question_vector).all()
+            or not np.linalg.norm(question_vector)
             or any(vector.shape != question_vector.shape for vector in vectors.values())):
         raise AskError("Query embedding dimensions differ from the verified generation. Check the model and refresh.")
     candidates = retrieve_top_k(question_vector, notes, vectors, top_k=top_k)
@@ -322,6 +328,7 @@ def ask(
     except AskError as exc:
         return AskResult(question=cleaned, answer=str(exc), sources=to_sources(relevant))
 
+    LOGGER.warning("Answer synthesis sends your question and retrieved note excerpts off this Mac to %s", model)
     messages = build_rag_prompt(cleaned, context)
     answer, tokens_used = call_rag_llm(client, model, messages)
 

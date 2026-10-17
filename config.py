@@ -83,7 +83,11 @@ RAG_TOP_K = 5
 MIN_RETRIEVAL_SCORE = 0.5
 RAG_MAX_EXCERPT_CHARS = 1200
 RAG_MAX_CONTEXT_CHARS = 8000
-EMBEDDING_MODEL = os.getenv("EMBEDDING_MODEL", "text-embedding-3-small")
+EMBEDDING_PROVIDER = os.getenv("EMBEDDING_PROVIDER", "ollama").strip().lower()
+EMBEDDING_MODEL = os.getenv("EMBEDDING_MODEL", "nomic-embed-text" if EMBEDDING_PROVIDER == "ollama" else "text-embedding-3-small")
+OLLAMA_BASE_URL = os.getenv("OLLAMA_BASE_URL", "http://localhost:11434")
+XAI_API_KEY = os.getenv("XAI_API_KEY", "")
+XAI_LLM_MODEL = os.getenv("XAI_LLM_MODEL", "grok-3-mini")
 LLM_MODEL = "gpt-4o-mini"
 BIDIRECTIONAL_LINKS = _env_flag("BIDIRECTIONAL_LINKS", default=True)
 

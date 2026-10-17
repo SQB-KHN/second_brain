@@ -25,7 +25,7 @@ Answer synthesized from YOUR accumulated knowledge
 ### 1. Prerequisites
 
 - Python 3.11 or newer
-- OpenAI API key (for classification, embeddings, and Q&A)
+- Ollama with `nomic-embed-text` for local embeddings; an optional provider key for classification and Q&A
 
 ### 2. Install
 
@@ -117,7 +117,7 @@ Phase 2 operational commands, migration, cost approval and recovery: [operations
 python refresh.py status --data-dir data
 python refresh.py dry-run --data-dir data
 # Follow docs/phase2-operations.md to approve a model, plan and cost budget.
-# A refresh needing no embeddings (e.g. deletion/rename) is entirely local:
+# Local Ollama refresh needs no key, external approval or paid budget:
 python refresh.py refresh --data-dir data
 
 # 3 — graph + Obsidian + visualization
@@ -144,9 +144,9 @@ streamlit run app.py              # http://localhost:8501
 cd secondself
 source .venv/bin/activate
 
-# Inspect and approve the initial embedding refresh; see Phase 2 operations.
+# Inspect the initial embedding refresh; see Phase 2 operations.
 python refresh.py dry-run --data-dir data
-# After a successful approved refresh, the UI reads the verified generation.
+# After a successful refresh, the UI reads the verified generation.
 
 # Launch Streamlit UI (graph + ask)
 streamlit run app.py
@@ -155,7 +155,9 @@ streamlit run app.py
 Open **http://localhost:8501** — graph on top, ask bar below, **Refresh brain** in the sidebar.
 
 Requires:
-- `OPENAI_API_KEY` for approved embeddings (`refresh.py`) and optionally for RAG answers
+- Ollama is the default embedding provider; no API key is needed for local refresh.
+- `OPENAI_API_KEY` enables optional OpenAI embeddings and RAG answers.
+- `XAI_API_KEY` enables Grok answers (takes precedence over OpenAI and Groq); `XAI_LLM_MODEL` selects the model. Retrieved excerpts and questions leave the Mac for answer synthesis.
 - `GROQ_API_KEY` works for RAG answers if OpenAI is not set for chat
 
 ## Deploy to Streamlit Cloud (Phase 8)
@@ -238,3 +240,32 @@ _Add your Streamlit Cloud URL here after deploy._
 ## License
 
 Personal project — add a license before public release.
+
+### Local Ollama embeddings
+
+Start Ollama and install `nomic-embed-text` with `ollama pull nomic-embed-text`.
+Set `SECONDSELF_DATA_DIR=data` when running the local app to avoid demo fallback.
+Defaults are `EMBEDDING_PROVIDER=ollama`, `EMBEDDING_MODEL=nomic-embed-text` and
+`OLLAMA_BASE_URL=http://localhost:11434`. The endpoint must be loopback HTTP;
+redirects and environment proxies are disabled. Requests use `/api/embed` with
+truncation disabled so long notes fail explicitly rather than silently lose text.
+
+```bash
+python refresh.py dry-run --data-dir data
+python refresh.py refresh --data-dir data
+# For unidentified legacy vectors, explicitly re-embed without deleting originals:
+python refresh.py refresh --data-dir data --migrate-legacy
+```
+
+Notes and questions use the same embedding adapter. Provider/model changes require
+a full new generation; old generations and loose embeddings remain intact.
+For optional OpenAI embeddings set `EMBEDDING_PROVIDER=openai` and
+`EMBEDDING_MODEL=text-embedding-3-small`, then follow the external approval and
+budget procedure in [operations](docs/phase2-operations.md). Apply the same settings
+to Ask and Graph. Embedding models must remain pinned: replacing model weights
+under the same Ollama name requires a new model name and refresh.
+
+Grok uses the [xAI API endpoint](https://docs.x.ai/overview) for answers only;
+`XAI_LLM_MODEL` defaults to `grok-3-mini` and can be changed for account availability.
+No answer provider key is needed to build the local graph. Answer synthesis can
+incur provider charges and sends retrieved excerpts off the Mac.
