@@ -269,3 +269,7 @@ Grok uses the [xAI API endpoint](https://docs.x.ai/overview) for answers only;
 `XAI_LLM_MODEL` defaults to `grok-3-mini` and can be changed for account availability.
 No answer provider key is needed to build the local graph. Answer synthesis can
 incur provider charges and sends retrieved excerpts off the Mac.
+
+### Personal knowledge workspace
+
+The Streamlit app provides **Home**, **Capture**, **Ask**, **Explore**, and **Library**, with light/dark appearance and responsive navigation. **Save & Index** publishes notes through the verified generation pipeline so the graph and Ask use the same fresh knowledge. See [workspace guide](docs/workspace.md) for drafts, editing, provider requirements, demo isolation, and indexing recovery.
