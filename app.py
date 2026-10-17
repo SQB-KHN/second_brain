@@ -156,7 +156,7 @@ def render_sources(result: AskResult) -> None:
         )
 
 
-VIEWS = ('Home', 'Capture', 'Ask', 'Explore', 'Library')
+VIEWS = ('Home', 'Capture', 'Ask', 'Explore', 'Library', 'Insights')
 
 
 def navigate(view):
@@ -358,6 +358,59 @@ def explore_view(all_notes, stats, appearance):
             st.markdown(match.body)
 
 
+def insights_view():
+    import insights
+    from config import DATA_DIR
+    st.caption('Evidence-backed candidates for human review. Local only by default; notes are never edited.')
+    if DEPLOY_MODE:
+        st.info('Insights are disabled in the read-only demo.')
+        return
+    scope = st.selectbox('Insight scope', ['all', *PARA_FOLDERS])
+    cap = st.number_input('Maximum candidates', min_value=1, max_value=10, value=10)
+    try:
+        if st.button('Generate Insights', type='primary'):
+            with st.spinner('Checking verified local evidence…'):
+                items = insights.generate(DATA_DIR, scope, int(cap))
+            if not items:
+                st.info('No supported candidates in this scope. Small corpora may only support metadata observations.')
+        records = insights.load(DATA_DIR)
+        try:
+            generation, notes, _ = insights.snapshot(DATA_DIR)
+        except (ValueError, OSError, KeyError):
+            generation, notes = None, []
+            st.warning('Refresh the verified index before generating. Saved candidates below are stale.')
+        for item in records.values():
+            if scope != 'all' and any(s.get('para') != scope for s in item['sources']):
+                continue
+            with st.container(border=True):
+                st.subheader(item['type'])
+                st.write(item['claim'])
+                is_stale = insights.stale(item, generation, notes)
+                if is_stale:
+                    st.warning('Stale insight: generation or source evidence changed. Regenerate before relying on it.')
+                st.write(item['rationale'])
+                for source in item['sources']:
+                    with st.expander(source['title'] + ' · ' + source['id']):
+                        st.text(source['excerpt'])
+                        st.caption('Source fingerprint: ' + source['fingerprint'])
+                st.caption('Generation: ' + item['generation'])
+                st.write('Limitations: ' + item['limitations'])
+                st.write('Suggested question/action: ' + item['question'])
+                status = st.selectbox('Review status', insights.STATUSES,
+                    index=insights.STATUSES.index(item['status']), key='status_' + item['id'] + '_' + item['status'])
+                st.caption('Saved status: ' + item['status'])
+                if st.button('Save review', key='review_' + item['id']):
+                    insights.review(DATA_DIR, item['id'], status)
+                    st.rerun()
+                authorized = st.checkbox('Authorize sending these excerpts to xAI (leaves device; may cost money)', key='cloud_' + item['id'])
+                if st.button('Ask xAI to select a review question', key='send_' + item['id'], disabled=is_stale or not authorized):
+                    st.write(insights.cloud_question(DATA_DIR, item['id'], authorized=authorized))
+    except ValueError as exc:
+        st.error(str(exc))
+    except (OSError, KeyError, TypeError):
+        st.error('Insights unavailable. Check verified index, metadata, local storage and provider configuration. Existing notes are preserved.')
+
+
 def main():
     from workspace import notes
     st.set_page_config(page_title='SecondSelf · Workspace', page_icon='◈', layout='wide')
@@ -445,6 +498,8 @@ def main():
         capture_view()
     elif view == 'Ask':
         ask_view()
+    elif view == 'Insights':
+        insights_view()
     elif view == 'Explore':
         explore_view(all_notes, stats, appearance)
     else:
