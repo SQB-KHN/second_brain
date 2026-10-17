@@ -1,10 +1,10 @@
 # SecondSelf — Local-first AI Knowledge Workspace
 
-**Capture knowledge. Index it privately. Ask grounded questions. Explore connections.**
+**Capture evidence. Manage datasets. Run reproducible statistics. Explore grounded insights.**
 
-SecondSelf is an AI-assisted personal knowledge system built with Python and Streamlit. It combines a five-view workspace, structured Markdown notes, a verified local semantic index, an interactive knowledge graph, and optional cloud LLM answer generation.
+SecondSelf is an AI-assisted personal knowledge system built with Python and Streamlit. It combines Markdown knowledge capture, source-traceable document ingestion, a verified local semantic index, an interactive knowledge graph, AI-assisted evidence review, immutable structured datasets, and locally executed statistical analysis. The **Analyse** feature is on draft PR #21 pending merge.
 
-**Project status:** working local application; not a hosted public product. Private notes remain on the user's machine. A public demo is **not** being claimed here.
+**Project status:** working local application; document ingestion, AI Insights and Dataset Manager are merged on `main`; statistical Analyse is implemented and verified on draft [PR #21](https://github.com/SQB-KHN/second_brain/pull/21), not yet merged. Not a hosted public product. Private notes remain on the user's machine. A public demo is **not** being claimed here.
 
 [Architecture](docs/portfolio-architecture.md) · [Engineering case study](docs/portfolio-case-study.md) · [Workspace guide](docs/workspace.md) · [Indexing operations](docs/phase2-operations.md)
 
@@ -24,17 +24,29 @@ These are real screenshots of the local SecondSelf application, captured using t
 
 ![SecondSelf Explore filters](docs/media/explore-filters.png)
 
+## Portfolio feature highlights
+
+| Feature | What was engineered | Delivery |
+| --- | --- | --- |
+| Local-first knowledge and RAG | Markdown capture, source-backed retrieval, Ollama embeddings, transactional freshness checks and interactive knowledge graph | Merged |
+| Document intelligence | Previewed PDF/CSV/XLSX imports, retained PDF page and spreadsheet sheet/row provenance, deduplication, retryable ingestion and explicit external-answer consent | [PR #19](https://github.com/SQB-KHN/second_brain/pull/19) — merged |
+| AI Insights | Reviewable evidence-backed gap, conflict and connection candidates; persistent review decisions and staleness handling | [PR #18](https://github.com/SQB-KHN/second_brain/pull/18) — merged |
+| Structured Dataset Manager | Immutable versioned CSV/XLSX/Parquet storage, column profiling, missingness, metadata dictionaries and reproducible descriptive statistics | [PR #20](https://github.com/SQB-KHN/second_brain/pull/20) — merged |
+| Statistical Analyse workspace | Local descriptive and inferential statistics, Pearson/Spearman correlations, paired/independent t-tests, chi-square, OLS/logistic regression, diagnostics, saved manifests, plots and exports | [PR #21](https://github.com/SQB-KHN/second_brain/pull/21) — draft, pending merge |
+
+See the [expanded portfolio feature brief](docs/portfolio-feature-brief.md) for architecture, boundaries, acceptance evidence and scope.
+
 ## What it demonstrates
 
 | Capability | Implementation |
 | --- | --- |
-| Product design | Home, Capture, Ask, Explore, Library; responsive Streamlit workspace |
-| Data workflows | Note creation, editing, drafts, PARA categorization, local persistence |
-| Applied AI / RAG | Ollama `nomic-embed-text` semantic embeddings; source-backed retrieval |
+| Product design | Home, Capture, Ask, Explore, Library, Insights and Datasets on main; Analyse on PR #21 |
+| Data workflows | Note capture, PDF/CSV/XLSX evidence ingestion, dataset versioning, schema profiling, descriptive outputs |
+| Applied AI / RAG | Ollama `nomic-embed-text` embeddings; source-backed retrieval, document provenance and reviewed Insights |
 | Knowledge discovery | Interactive note graph and semantic relationships |
-| Reliability | Transactional generations, fingerprints, freshness checks, recovery |
+| Reliability | Transactional generations, immutable datasets, content hashes, provenance, bounded processing, repeatable analysis manifests |
 | API integration | Optional xAI Grok answer generation and optional OpenAI embedding backend |
-| Quality engineering | Python tests, browser-based graph safety checks, GitHub Actions |
+| Quality engineering | Automated numerical/reference tests, real-browser acceptance, graph safety checks, GitHub Actions |
 
 ### Product walkthrough
 
@@ -99,7 +111,7 @@ The final command requires a configured LLM answer provider. See [operations](do
 
 - **Local integration:** a real Ollama smoke test returned 768-dimensional vectors from `nomic-embed-text`.
 - **Functional acceptance:** Save & Index, Library visibility, Explore visibility, and an Ask response with a cited local note were manually verified in development.
-- **Automated checks:** a reported 80-test suite and browser checks passed during the daily workspace PR; CI passed for that merged change. These are development checks, **not** independent production quality benchmarks.
+- **Automated checks:** the local Statistical Engine PR #21 validation reported **124 passing tests** and **five passing browser suites**; its GitHub CI completed successfully. Earlier document and dataset feature deliveries have their own synthetic acceptance checks. These are development checks, **not** independent production quality or statistical validity benchmarks.
 - **Delivery history:** [Ollama integration PR #14](https://github.com/SQB-KHN/second_brain/pull/14) and [workspace PR #15](https://github.com/SQB-KHN/second_brain/pull/15).
 
 ### Screenshots and short demo
@@ -120,7 +132,7 @@ This project was built with **AI-assisted development (Codex)** alongside requir
 
 ## Tech stack
 
-Python · Streamlit · Ollama · nomic-embed-text · vector similarity search · interactive knowledge graphs · optional xAI Grok/OpenAI · pytest · Playwright · GitHub Actions
+Python · Streamlit · SQLite · NumPy · SciPy · statsmodels · pyarrow · openpyxl · pypdf · Ollama · nomic-embed-text · source-backed retrieval · optional xAI Grok/OpenAI · unittest · Playwright · GitHub Actions
 
 ## Project documentation
 
@@ -157,3 +169,9 @@ Files are limited to 10 MiB, 20,000 rows, 100 columns and 100,000 cells; the rea
 demo does not access datasets. Pyarrow is the additional native dependency.
 See [Dataset Manager operations, limits and synthetic demo](docs/dataset-manager.md)
 for supported types, persistence/security boundaries and verification commands.
+
+Statistical analysis: [Analyse workspace and numerical conventions](docs/statistical-engine.md).
+
+### SecondSelf 3.1: Analyse workspace (draft PR #21)
+
+On the `statistical-engine-v1` branch, **Analyse** operates on registered immutable dataset versions, runs allowlisted local statistical procedures with SciPy/statsmodels, displays assumptions and diagnostics, and saves reproducible analysis manifests with charts and exports. Supported workflows include correlations, paired/independent t-tests, chi-square, OLS and binary logistic regression. It does **not** run uploaded scripts, compute inferential results with an LLM, establish causation or send dataset values to external AI. See [statistical engine documentation](docs/statistical-engine.md) and [PR #21](https://github.com/SQB-KHN/second_brain/pull/21). The feature is **not in `main` until PR #21 is merged**.
