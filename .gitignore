@@ -76,3 +76,7 @@ data/embeddings/**
 
 # Transactional local knowledge generations
 data/knowledge/
+
+# Local document sources and recovery bundles
+data/imports/
+data/insights/

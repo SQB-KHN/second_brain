@@ -129,3 +129,10 @@ Python · Streamlit · Ollama · nomic-embed-text · vector similarity search ·
 - [Case study](docs/portfolio-case-study.md)
 - [Portfolio media / demonstration checklist](docs/portfolio-media.md)
 - [Verified refresh and operations](docs/phase2-operations.md)
+
+### Intelligent document ingestion
+
+Local Capture now supports PDF, UTF-8 CSV and XLSX preview, explicit save and local
+Ollama indexing, page/sheet/row citations, duplicate detection and retryable import
+history. Imported excerpts require explicit consent before external Ask synthesis.
+See [document ingestion operations and limitations](docs/document-ingestion.md).
