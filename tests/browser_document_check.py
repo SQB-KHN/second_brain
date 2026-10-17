@@ -37,6 +37,10 @@ refresh.create_embedder = lambda *args: embed
 ask.embed = lambda text: __import__('numpy').array([1., 0., 0.])
 ask.get_llm_client = lambda: (object(), 'synthetic')
 ask.call_rag_llm = lambda *args: ('Synthetic consented answer', 1)
+# Equal synthetic vectors tie; retrieve every fixture segment for citation checks.
+if not hasattr(ask, '_browser_original_ask'):
+    ask._browser_original_ask = ask.ask
+ask.ask = lambda question, **kwargs: ask._browser_original_ask(question, top_k=20, **kwargs)
 runpy.run_path('app.py', run_name='__main__')
 ''')
         with socket.socket() as listener:
@@ -128,7 +132,7 @@ runpy.run_path('app.py', run_name='__main__')
                 page.get_by_placeholder('Ask anything about your knowledge…').fill('Summarize synthetic evidence')
                 page.get_by_placeholder('Ask anything about your knowledge…').press('Enter')
                 page.get_by_text('Synthetic consented answer', exact=True).wait_for()
-                assert page.get_by_text('report.pdf · page 1', exact=True).count() > 0
+                page.get_by_text('report.pdf · page 1', exact=True).first.wait_for()
                 assert not page.locator('[data-testid=stException]').count()
                 browser.close()
                 print('PASS browser: malformed PDF, page/sheet/row previews, PDF/CSV/XLSX upload, duplicate, failed indexing/retry, Ask provenance and consent, imported Library/Graph/Insights evidence')
