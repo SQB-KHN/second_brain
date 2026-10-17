@@ -103,3 +103,25 @@ upload/consent workflow and existing graph browser checks passed. Ollama embeddi
 and answer synthesis were mocked; real local Ollama throughput and external model
 answer quality were not measured. No paid APIs, deployment or personal data were
 used. CI runs both browser scripts on this branch and pull requests.
+
+### PR #19 integration verification (2026-10-17)
+
+Merged `origin/main` including AI Insights into `document-ingestion-v1`, retaining
+both features and both private-data ignore rules. Validation used temporary,
+synthetic workspaces, without reading personal documents or sending cloud calls.
+
+- Full automated suite: 93 tests passed, with no skips.
+- Document browser suite: PDF/CSV/XLSX previews and uploads, malformed input,
+  duplicate handling, indexing failure/retry, Ask consent and page citations passed.
+- Combined browser regression: imported CSV evidence appears in Library (read-only),
+  Explore graph node details, and an Insights potential contradiction.
+- Graph browser suite: empty/populated graph, category filters, canvas node clicks,
+  and hostile-content rendering passed with the actual pinned graph library.
+- Insights browser suite: real local Ollama refresh, generation, evidence, review
+  persistence across restart, stale-source detection, all views and mobile viewport
+  passed.
+
+Limits: local tests used Python 3.14 and Chrome; CI uses Python 3.11 and Chromium.
+Document browser embeddings and external Ask synthesis are deterministic mocks;
+real Ollama is exercised separately by the Insights browser suite. No live paid
+LLM synthesis, OCR, deployment or production-data validation was performed.

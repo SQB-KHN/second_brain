@@ -136,3 +136,10 @@ Local Capture now supports PDF, UTF-8 CSV and XLSX preview, explicit save and lo
 Ollama indexing, page/sheet/row citations, duplicate detection and retryable import
 history. Imported excerpts require explicit consent before external Ask synthesis.
 See [document ingestion operations and limitations](docs/document-ingestion.md).
+
+### AI Insights
+
+The sixth workspace view generates local, evidence-backed candidate gaps,
+potential contradictions and connections from the verified index. Review
+excerpts, uncertainties and persistent decisions before taking action. See
+[AI Insights usage, limits and synthetic acceptance checks](docs/ai-insights.md).

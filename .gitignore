@@ -79,4 +79,5 @@ data/knowledge/
 
 # Local document sources and recovery bundles
 data/imports/
+# Private local insight evidence and decisions
 data/insights/
