@@ -18,7 +18,8 @@ import uuid
 
 import numpy as np
 
-from config import DATA_DIR, EMBEDDING_MODEL, PARA_FOLDERS, ROOT, SIMILARITY_THRESHOLD
+from config import DATA_DIR, EMBEDDING_MODEL, EMBEDDING_PROVIDER, PARA_FOLDERS, ROOT, SIMILARITY_THRESHOLD
+from tools.embedding_provider import model_identity, create_embedder, validate_vector
 from tools.embedding_freshness import classify_embedding, source_fingerprint, vector_fingerprint
 from tools.verified_vectors import select_verified_vectors
 
@@ -73,7 +74,8 @@ def current(data_dir, reference=None):
     return directory, manifest
 
 
-def inventory(data_dir, model=EMBEDDING_MODEL):
+def inventory(data_dir, model=EMBEDDING_MODEL, provider=EMBEDDING_PROVIDER):
+    model = model_identity(model, provider)
     data_dir = Path(data_dir).resolve()
     notes, files = scan(data_dir)
     active = current(data_dir)
@@ -106,8 +108,9 @@ def inventory(data_dir, model=EMBEDDING_MODEL):
     return notes, vectors, affected, plan
 
 
-def verified_active_vectors(data_dir=DATA_DIR, model=EMBEDDING_MODEL, *, _active=None):
+def verified_active_vectors(data_dir=DATA_DIR, model=EMBEDDING_MODEL, *, provider=EMBEDDING_PROVIDER, _active=None):
     """Shared fail-closed view for Ask, Graph and the UI."""
+    model = model_identity(model, provider)
     data_dir = Path(data_dir).resolve()
     active = _active if _active is not None else current(data_dir)
     if not active:
@@ -164,38 +167,35 @@ def durable_write(path, content):
 
 def refresh(data_dir=DATA_DIR, *, model=EMBEDDING_MODEL, allow_api=False,
             approve_plan=None, price_per_million=None, max_cost=None,
-            migrate_legacy=False, threshold=SIMILARITY_THRESHOLD, embedder=None):
+            migrate_legacy=False, provider=EMBEDDING_PROVIDER, threshold=SIMILARITY_THRESHOLD, embedder=None):
     data_dir = Path(data_dir).resolve()
     if data_dir == (ROOT / 'demo').resolve() or (ROOT / 'demo').resolve() in data_dir.parents:
         raise ValueError("Refresh cannot write the published demo")
     if not math.isfinite(threshold) or not 0 <= threshold <= 1:
         raise ValueError("Threshold must be between zero and one")
     with writer_lock(data_dir / 'knowledge'):
-        notes, vectors, affected, plan = inventory(data_dir, model)
+        notes, vectors, affected, plan = inventory(data_dir, model, provider)
         reused = set(vectors)
         old = current(data_dir)
         old_path = old[0] / 'index.json' if old else data_dir / 'embeddings/index.json'
         old_index = json.loads(old_path.read_text()) if old_path.exists() else {}
         if affected:
-            if not allow_api or approve_plan != plan['approval_digest']:
-                raise ValueError("External embedding requires --allow-api and --approve-plan from dry-run")
+            if provider == 'openai':
+                if not allow_api or approve_plan != plan['approval_digest']:
+                    raise ValueError("External embedding requires --allow-api and --approve-plan from dry-run")
+                if any(x is None or not math.isfinite(x) or x < 0 for x in (price_per_million, max_cost)):
+                    raise ValueError("Supply nonnegative --price-per-million and --max-cost")
+                cost = plan['input_token_upper_bound'] * price_per_million / 1_000_000
+                if cost > max_cost:
+                    raise ValueError("Expected upper-bound cost exceeds approved budget")
+            if approve_plan is not None and approve_plan != plan['approval_digest']:
+                raise ValueError("Plan changed; run dry-run again")
             if plan['legacy_unknown'] and not migrate_legacy:
                 raise ValueError("Legacy vectors require --migrate-legacy; they will be re-embedded")
-            if any(x is None or not math.isfinite(x) or x < 0 for x in (price_per_million, max_cost)):
-                raise ValueError("Supply nonnegative --price-per-million and --max-cost")
-            cost = plan['input_token_upper_bound'] * price_per_million / 1_000_000
-            if cost > max_cost:
-                raise ValueError("Expected upper-bound cost exceeds approved budget")
             if embedder is None:
-                from link import require_embedding_api_key
-                client = require_embedding_api_key().with_options(max_retries=0)
-                def embedder(text):
-                    response = client.embeddings.create(model=model, input=text)
-                    return response.data[0].embedding
+                embedder = create_embedder(model, provider)
             for note in affected:
-                vector = np.asarray(embedder(note.embed_text), dtype=np.float32)
-                if vector.ndim != 1 or not vector.size or not np.isfinite(vector).all() or not np.linalg.norm(vector):
-                    raise ValueError("Invalid embedding response")
+                vector = validate_vector(embedder(note.embed_text))
                 vectors[note.id] = vector
         if len({v.size for v in vectors.values()}) > 1:
             raise ValueError("Embedding dimension mismatch")
@@ -226,7 +226,7 @@ def refresh(data_dir=DATA_DIR, *, model=EMBEDDING_MODEL, allow_api=False,
             durable_write(path, content)
             index[note.id] = {'schema_version': 1, 'note_id': note.id,
                 'wiki_path': note.wiki_path, 'path': path.name,
-                'source_sha256': source_fingerprint(note.embed_text), 'embedding_model': model,
+                'source_sha256': source_fingerprint(note.embed_text), 'embedding_model': plan['model'],
                 'embedding_dimensions': int(vectors[note.id].size),
                 'vector_sha256': vector_fingerprint(content),
                 'generated_at': old_index[note.id].get('generated_at', now) if note.id in reused else now}
@@ -240,10 +240,10 @@ def refresh(data_dir=DATA_DIR, *, model=EMBEDDING_MODEL, allow_api=False,
             content = encoded(value)
             durable_write(directory / filename, content)
             checksums[filename] = digest(content)
-        manifest = encoded({'schema_version': 1, 'model': model, 'files': plan['files'],
+        manifest = encoded({'schema_version': 1, 'model': plan['model'], 'files': plan['files'],
                             'checksums': checksums, 'previous': plan['base']})
         durable_write(directory / 'manifest.json', manifest)
-        selected, excluded = select_verified_vectors(notes, index, directory, model)
+        selected, excluded = select_verified_vectors(notes, index, directory, plan['model'])
         if excluded or set(selected) != set(vectors):
             raise ValueError("Staged generation failed verification")
         if scan(data_dir)[1] != plan['files']:
@@ -261,7 +261,7 @@ def refresh(data_dir=DATA_DIR, *, model=EMBEDDING_MODEL, allow_api=False,
         return graph
 
 
-def restore(data_dir, generation, model=EMBEDDING_MODEL):
+def restore(data_dir, generation, model=EMBEDDING_MODEL, provider=EMBEDDING_PROVIDER):
     """Activate a complete retained generation only if it matches today's notes."""
     data_dir = Path(data_dir).resolve()
     if data_dir == (ROOT / 'demo').resolve() or (ROOT / 'demo').resolve() in data_dir.parents:
@@ -273,7 +273,7 @@ def restore(data_dir, generation, model=EMBEDDING_MODEL):
         reference = {'generation': generation,
                      'manifest_sha256': digest((directory / 'manifest.json').read_bytes())}
         active = current(data_dir, reference)
-        _, _, excluded = verified_active_vectors(data_dir, model, _active=active)
+        _, _, excluded = verified_active_vectors(data_dir, model, provider=provider, _active=active)
         if excluded:
             raise ValueError("Recovery generation does not match current notes/model/vectors")
         fd, temporary = tempfile.mkstemp(prefix='.restore-', dir=data_dir / 'knowledge')
@@ -293,6 +293,7 @@ def main(argv=None):
     parser.add_argument('--data-dir', type=Path, default=DATA_DIR)
     parser.add_argument('--generation')
     parser.add_argument('--model', default=EMBEDDING_MODEL)
+    parser.add_argument('--provider', choices=['ollama', 'openai'], default=EMBEDDING_PROVIDER)
     parser.add_argument('--allow-api', action='store_true')
     parser.add_argument('--approve-plan')
     parser.add_argument('--migrate-legacy', action='store_true')
@@ -302,7 +303,7 @@ def main(argv=None):
     args = parser.parse_args(argv)
     try:
         if args.command in ('status', 'dry-run'):
-            plan = inventory(args.data_dir, args.model)[3]
+            plan = inventory(args.data_dir, args.model, args.provider)[3]
             if args.price_per_million is not None:
                 if not math.isfinite(args.price_per_million) or args.price_per_million < 0:
                     raise ValueError('Price must be finite and nonnegative')
@@ -311,7 +312,7 @@ def main(argv=None):
         elif args.command == 'restore':
             if not args.generation:
                 raise ValueError('Restore requires --generation')
-            print(json.dumps(restore(args.data_dir, args.generation, args.model), indent=2))
+            print(json.dumps(restore(args.data_dir, args.generation, args.model, args.provider), indent=2))
         else:
             kwargs = vars(args).copy()
             kwargs.pop('generation')

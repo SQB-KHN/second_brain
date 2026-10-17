@@ -101,12 +101,12 @@ class RefreshWorkflowTests(unittest.TestCase):
 
     def test_approval_budget_and_obsolete_plan(self):
         path = self.note()
-        plan = r.inventory(self.root)[3]
+        plan = r.inventory(self.root, provider='openai')[3]
         for options in ({}, {'allow_api': True}, {'allow_api': True, 'approve_plan': plan['approval_digest']}):
             with self.assertRaises(ValueError):
-                r.refresh(self.root, embedder=self.provider, **options)
+                r.refresh(self.root, provider='openai', embedder=self.provider, **options)
         with self.assertRaises(ValueError):
-            self.update(max_cost=0)
+            r.refresh(self.root, provider='openai', allow_api=True, approve_plan=plan['approval_digest'], price_per_million=1, max_cost=0, embedder=self.provider)
         path.write_text(path.read_text() + 'Changed\n')
         with self.assertRaises(ValueError):
             self.update(approve_plan=plan['approval_digest'])
@@ -236,7 +236,7 @@ class RefreshWorkflowTests(unittest.TestCase):
         client.with_options.return_value = client
         client.embeddings.create.return_value = Mock(data=[Mock(embedding=[1., 0., 0.])])
         with patch.object(link, 'require_embedding_api_key', return_value=client):
-            self.update(embedder=None)
+            self.update(embedder=None, provider='openai', approve_plan=r.inventory(self.root, provider='openai')[3]['approval_digest'])
         client.with_options.assert_called_once_with(max_retries=0)
         client.embeddings.create.assert_called_once_with(
             model=config.EMBEDDING_MODEL, input=r.scan(self.root)[0][0].embed_text)

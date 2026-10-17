@@ -30,6 +30,7 @@ from config import (
     ENABLE_CAPTURE,
     ENABLE_REFRESH_BRAIN,
     GROQ_API_KEY,
+    XAI_API_KEY,
     GRAPH_FILE,
     OPENAI_API_KEY,
     PARA_FOLDERS,
@@ -91,7 +92,7 @@ def refresh_brain() -> tuple[bool, list[str]]:
 
 
 def llm_configured() -> bool:
-    return bool(OPENAI_API_KEY or GROQ_API_KEY)
+    return bool(XAI_API_KEY or OPENAI_API_KEY or GROQ_API_KEY)
 
 
 def ask_rate_limited() -> bool:
@@ -318,9 +319,7 @@ def main() -> None:
             )
 
         if not llm_configured():
-            st.warning("Ask requires OPENAI_API_KEY or GROQ_API_KEY in secrets/.env.")
-        elif not OPENAI_API_KEY:
-            st.warning("Embeddings require OPENAI_API_KEY. Ask retrieval may be limited.")
+            st.warning("Ask requires XAI_API_KEY, OPENAI_API_KEY or GROQ_API_KEY in secrets/.env.")
 
         st.divider()
         st.markdown("**Legend**")
@@ -338,6 +337,7 @@ def main() -> None:
 
     st.divider()
     st.subheader("Ask your brain")
+    st.caption("Answer synthesis sends your question and retrieved note excerpts off this Mac to the configured provider (xAI, OpenAI or Groq). Ollama embeddings stay local.")
 
     question = st.text_input(
         "Ask anything about your knowledge...",
@@ -354,7 +354,7 @@ def main() -> None:
         if not question.strip():
             st.error("Question cannot be empty.")
         elif not llm_configured():
-            st.error("API key not configured. Set OPENAI_API_KEY or GROQ_API_KEY in secrets/.env.")
+            st.error("API key not configured. Set XAI_API_KEY, OPENAI_API_KEY or GROQ_API_KEY in secrets/.env.")
         elif ask_rate_limited():
             st.error(
                 f"Rate limit reached ({ASK_RATE_LIMIT_PER_MINUTE} questions per minute). "
