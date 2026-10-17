@@ -8,6 +8,22 @@ SecondSelf is an AI-assisted personal knowledge system built with Python and Str
 
 [Architecture](docs/portfolio-architecture.md) · [Engineering case study](docs/portfolio-case-study.md) · [Workspace guide](docs/workspace.md) · [Indexing operations](docs/phase2-operations.md)
 
+## Application screenshots
+
+These are real screenshots of the local SecondSelf application, captured using test notes. No live public demo is implied.
+
+| Home | Capture |
+| --- | --- |
+| ![SecondSelf Home dashboard](docs/media/home.png) | ![SecondSelf note capture](docs/media/capture.png) |
+
+| Library | Knowledge graph |
+| --- | --- |
+| ![SecondSelf Library](docs/media/library.png) | ![SecondSelf knowledge graph](docs/media/explore.png) |
+
+**Explore — search and filtering**
+
+![SecondSelf Explore filters](docs/media/explore-filters.png)
+
 ## What it demonstrates
 
 | Capability | Implementation |
