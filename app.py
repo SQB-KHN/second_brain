@@ -159,7 +159,7 @@ def render_sources(result: AskResult) -> None:
         )
 
 
-VIEWS = ('Home', 'Capture', 'Ask', 'Explore', 'Library', 'Insights', 'Datasets')
+VIEWS = ('Home', 'Capture', 'Ask', 'Explore', 'Library', 'Insights', 'Datasets', 'Analyse')
 
 
 def navigate(view):
@@ -546,6 +546,9 @@ def main():
         ask_view()
     elif view == 'Datasets':
         from dataset_ui import render
+        render()
+    elif view == 'Analyse':
+        from analysis_ui import render
         render()
     elif view == 'Insights':
         insights_view()

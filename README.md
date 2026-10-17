@@ -157,3 +157,5 @@ Files are limited to 10 MiB, 20,000 rows, 100 columns and 100,000 cells; the rea
 demo does not access datasets. Pyarrow is the additional native dependency.
 See [Dataset Manager operations, limits and synthetic demo](docs/dataset-manager.md)
 for supported types, persistence/security boundaries and verification commands.
+
+Statistical analysis: [Analyse workspace and numerical conventions](docs/statistical-engine.md).

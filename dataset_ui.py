@@ -75,6 +75,10 @@ def render():
         record, table = registry.inspect(selected)
         st.caption(f"SHA-256: {record['sha256']} · {record['bytes']} bytes · {record['origin']} · {record['created']}")
         preview(table)
+        def analyse():
+            st.session_state.analyse_dataset = selected
+            st.session_state.view = 'Analyse'
+        st.button('Analyse this version', on_click=analyse)
         if st.button('Reprofile selected version'):
             registry.reprofile(selected)
             st.success('Profile refreshed from verified original bytes.')
