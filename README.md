@@ -129,3 +129,10 @@ Python · Streamlit · Ollama · nomic-embed-text · vector similarity search ·
 - [Case study](docs/portfolio-case-study.md)
 - [Portfolio media / demonstration checklist](docs/portfolio-media.md)
 - [Verified refresh and operations](docs/phase2-operations.md)
+
+### AI Insights
+
+The sixth workspace view generates local, evidence-backed candidate gaps,
+potential contradictions and connections from the verified index. Review
+excerpts, uncertainties and persistent decisions before taking action. See
+[AI Insights usage, limits and synthetic acceptance checks](docs/ai-insights.md).

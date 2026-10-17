@@ -76,3 +76,6 @@ data/embeddings/**
 
 # Transactional local knowledge generations
 data/knowledge/
+
+# Private local insight evidence and decisions
+data/insights/
