@@ -60,7 +60,7 @@ at = AppTest.from_file('app.py', default_timeout=30).run()
 assert not at.exception, [e.message for e in at.exception]
 assert next(m.value for m in at.metric if m.label == 'Notes') == str(EXPECTED)
 assert ('Synthetic Visible Note' in render_graph_html()) == bool(EXPECTED)
-for view in ('Capture', 'Explore', 'Library', 'Ask', 'Insights', 'Home'):
+for view in ('Capture', 'Explore', 'Library', 'Ask', 'Insights', 'Datasets', 'Home'):
     at.radio[0].set_value(view).run()
     assert not at.exception
 at.radio[0].set_value('Ask').run()

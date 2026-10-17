@@ -4,7 +4,7 @@ on:
   pull_request:
     branches: [main]
   push:
-    branches: [harden-demo-publication, document-ingestion-v1]
+    branches: [harden-demo-publication, document-ingestion-v1, dataset-manager-v1]
   workflow_dispatch:
 
 permissions:
@@ -66,6 +66,8 @@ jobs:
       - name: Find isolated Playwright Chromium executable
         run: |
           echo "SECONDSELF_TEST_CHROME=$(python -c 'from playwright.sync_api import sync_playwright; p=sync_playwright().start(); print(p.chromium.executable_path); p.stop()')" >> "$GITHUB_ENV"
+      - name: Run synthetic dataset browser checks
+        run: PYTHONPATH=.:tests python -B tests/browser_dataset_check.py
       - name: Run synthetic document browser checks
         run: PYTHONPATH=.:tests python -B tests/browser_document_check.py
       - name: Run synthetic graph browser checks

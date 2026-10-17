@@ -143,3 +143,17 @@ The sixth workspace view generates local, evidence-backed candidate gaps,
 potential contradictions and connections from the verified index. Review
 excerpts, uncertainties and persistent decisions before taking action. See
 [AI Insights usage, limits and synthetic acceptance checks](docs/ai-insights.md).
+
+### SecondSelf 2.2: local Datasets workspace
+
+**Datasets** previews and stores CSV, XLSX (selected sheet) and scalar Parquet tables
+locally, with immutable source bytes, deduplicated imports, version history, column
+profiles/missingness, metadata-only data dictionaries and saved reproducible
+descriptive statistics. Dataset values never enter AI prompts or embeddings.
+The existing document importer and knowledge workflows remain available.
+
+Run with `DEPLOY_MODE=false` and a private `SECONDSELF_DATA_DIR`, then open Datasets.
+Files are limited to 10 MiB, 20,000 rows, 100 columns and 100,000 cells; the read-only
+demo does not access datasets. Pyarrow is the additional native dependency.
+See [Dataset Manager operations, limits and synthetic demo](docs/dataset-manager.md)
+for supported types, persistence/security boundaries and verification commands.
