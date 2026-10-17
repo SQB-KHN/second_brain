@@ -1,6 +1,8 @@
 # Environment and secrets — NEVER commit
 .env
 .env.local
+.env.*
+!.env.example
 .streamlit/secrets.toml
 *.pem
 *.key
