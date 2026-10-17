@@ -7,6 +7,12 @@ import ask
 
 
 class AskFreshnessGateTests(unittest.TestCase):
+    def setUp(self):
+        # Isolate legacy-gate tests from any real local knowledge generation.
+        current = patch('refresh.current', return_value=None)
+        current.start()
+        self.addCleanup(current.stop)
+
     def test_nonempty_legacy_index_fails_closed_without_api_calls(self):
         with (patch.object(ask, "load_embedding_index", return_value={"x": {"path": "legacy.npy"}}),
               patch.object(ask, "scan_wiki_notes", return_value=[object()]),

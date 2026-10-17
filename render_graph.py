@@ -222,12 +222,23 @@ def render_graph_html(
     graph: dict[str, Any] | None = None,
     *,
     graph_file: Path | None = None,
+    theme: str = "dark",
 ) -> str:
     """Return a self-contained HTML document for vis-network (Phase 5.9)."""
     if graph is None:
         graph = load_graph(graph_file or GRAPH_FILE)
 
     payload = prepare_vis_payload(graph)
+    if theme not in ("light", "dark"):
+        raise ValueError("Unknown graph theme")
+    theme_css = ""
+    if theme == "light":
+        for node in payload["nodes"]:
+            node["font"]["color"] = "#172033"
+        theme_css = """<style>:root{--bg:#f8fafc;--panel:#fff;--text:#172033;--muted:#475569;--border:#cbd5e1}
+        #network{background:#f8fafc} input,select,button{background:#fff;color:#172033}
+        .toolbar{background:#fff}.tag{color:#1e40af}.pulse-hint,#banner{color:#92400e}
+        #error-panel{color:#991b1b}button:focus-visible{outline:3px solid #4f46e5;outline-offset:2px}</style>"""
     # JSON quoting alone does not protect an HTML script raw-text context.
     # Escape HTML delimiters and JS line separators without changing the data.
     graph_json = json.dumps(payload, ensure_ascii=False)
@@ -414,6 +425,7 @@ def render_graph_html(
       margin-top: 0.5rem;
     }}
   </style>
+{theme_css}
 </head>
 <body>
   <header>

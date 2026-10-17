@@ -60,18 +60,57 @@ at = AppTest.from_file('app.py', default_timeout=30).run()
 assert not at.exception, [e.message for e in at.exception]
 assert next(m.value for m in at.metric if m.label == 'Notes') == str(EXPECTED)
 assert ('Synthetic Visible Note' in render_graph_html()) == bool(EXPECTED)
-for category in ('resources', 'archives', 'all'):
-    at.selectbox[0].select(category).run()
+for view in ('Capture', 'Explore', 'Library', 'Ask', 'Home'):
+    at.radio[0].set_value(view).run()
     assert not at.exception
+at.radio[0].set_value('Ask').run()
 # No API/embedding work should occur on this path.
 with patch.object(ask, 'embed', side_effect=AssertionError('API must not be used')), patch.object(ask, 'get_llm_client', side_effect=AssertionError('API must not be used')):
     result = ask.ask('Synthetic question')
     assert result.sources == [] and 'Brain not indexed' in result.answer
-    next(x for x in at.text_input if 'Ask anything' in x.label).set_value('Synthetic question')
-    next(x for x in at.button if x.label == 'Ask').click().run()
+    at.chat_input[0].set_value('Synthetic question').run()
     assert not at.exception
     assert any('Brain not indexed' in str(m.value) for m in at.markdown)
 '''.replace('EXPECTED', str(expected)))
+
+    def test_local_drafts_save_retry_and_navigation(self):
+        self.env.update(DEPLOY_MODE='false', SECONDSELF_DATA_DIR=str(self.root/'workspace'), EMBEDDING_PROVIDER='ollama')
+        self.run_python("""
+from unittest.mock import patch
+from streamlit.testing.v1 import AppTest
+import workspace, refresh
+
+def publish(root):
+    return refresh.refresh(root, embedder=lambda text: [1., 0., 0.])
+
+def button(at, label):
+    return next(b for b in at.button if b.label == label)
+
+at = AppTest.from_file('app.py', default_timeout=30).run()
+at.radio[0].set_value('Capture').run()
+at.text_input(key='draft_title').set_value('Synthetic UI title').run()
+at.text_area(key='draft_body').set_value('Synthetic body').run()
+button(at, 'Keep session draft').click().run()
+at.radio[0].set_value('Home').run()
+at.radio[0].set_value('Capture').run()
+assert at.text_area(key='draft_body').value == 'Synthetic body'
+with patch.object(workspace, 'refresh', side_effect=ValueError('offline')):
+    button(at, 'Save & Index').click().run()
+assert not at.exception
+assert len(workspace.notes()) == 1
+assert at.error
+with patch.object(workspace, 'refresh', side_effect=publish):
+    button(at, 'Retry indexing').click().run()
+assert not at.exception
+assert at.success
+assert at.text_area(key='draft_body').value == ''
+assert len(workspace.notes()) == 1
+at.radio[0].set_value('Explore').run()
+assert not at.exception
+at.radio[0].set_value('Library').run()
+assert not at.exception
+assert at.text_input(key='edit_' + workspace.notes()[0].id + '_title').value == 'Synthetic UI title'
+""")
 
     def test_renderer_script_payload_roundtrips_without_html_injection(self):
         self.run_python(r'''
