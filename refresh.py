@@ -168,97 +168,114 @@ def durable_write(path, content):
 def refresh(data_dir=DATA_DIR, *, model=EMBEDDING_MODEL, allow_api=False,
             approve_plan=None, price_per_million=None, max_cost=None,
             migrate_legacy=False, provider=EMBEDDING_PROVIDER, threshold=SIMILARITY_THRESHOLD, embedder=None):
+    """Acquire the shared writer lock before any refresh work."""
     data_dir = Path(data_dir).resolve()
     if data_dir == (ROOT / 'demo').resolve() or (ROOT / 'demo').resolve() in data_dir.parents:
         raise ValueError("Refresh cannot write the published demo")
     if not math.isfinite(threshold) or not 0 <= threshold <= 1:
         raise ValueError("Threshold must be between zero and one")
     with writer_lock(data_dir / 'knowledge'):
-        notes, vectors, affected, plan = inventory(data_dir, model, provider)
-        reused = set(vectors)
-        old = current(data_dir)
-        old_path = old[0] / 'index.json' if old else data_dir / 'embeddings/index.json'
-        old_index = json.loads(old_path.read_text()) if old_path.exists() else {}
-        if affected:
-            if provider == 'openai':
-                if not allow_api or approve_plan != plan['approval_digest']:
-                    raise ValueError("External embedding requires --allow-api and --approve-plan from dry-run")
-                if any(x is None or not math.isfinite(x) or x < 0 for x in (price_per_million, max_cost)):
-                    raise ValueError("Supply nonnegative --price-per-million and --max-cost")
-                cost = plan['input_token_upper_bound'] * price_per_million / 1_000_000
-                if cost > max_cost:
-                    raise ValueError("Expected upper-bound cost exceeds approved budget")
-            if approve_plan is not None and approve_plan != plan['approval_digest']:
-                raise ValueError("Plan changed; run dry-run again")
-            if plan['legacy_unknown'] and not migrate_legacy:
-                raise ValueError("Legacy vectors require --migrate-legacy; they will be re-embedded")
-            if embedder is None:
-                embedder = create_embedder(model, provider)
-            for note in affected:
-                vector = validate_vector(embedder(note.embed_text))
-                vectors[note.id] = vector
-        if len({v.size for v in vectors.values()}) > 1:
-            raise ValueError("Embedding dimension mismatch")
-        from build_graph import (EdgeCollector, collect_explicit_edges, build_nodes,
-                                 apply_node_degrees)
-        from link import compute_all_similarity_pairs
-        collector = EdgeCollector({n.id for n in notes})
-        collect_explicit_edges(notes, {n.slug: n.id for n in notes}, collector)
-        relationships = []
-        for pair in compute_all_similarity_pairs(vectors):
-            if pair.score >= threshold:
-                relationships.append({'source': pair.source_id, 'target': pair.target_id,
-                                      'weight': round(pair.score, 4), 'type': 'semantic'})
-                collector.add_semantic(pair.source_id, pair.target_id, pair.score)
-        name = uuid.uuid4().hex
-        generations = data_dir / 'knowledge' / 'generations'
-        generations.mkdir(exist_ok=True)
-        directory = generations / name
-        directory.mkdir()
-        # Unpublished generations deliberately remain recoverable on any failure.
-        index = {}
-        now = datetime.now(timezone.utc).isoformat()
-        for note in notes:
-            stream = io.BytesIO()
-            np.save(stream, vectors[note.id], allow_pickle=False)
-            content = stream.getvalue()
-            path = directory / (note.id + '.npy')
-            durable_write(path, content)
-            index[note.id] = {'schema_version': 1, 'note_id': note.id,
-                'wiki_path': note.wiki_path, 'path': path.name,
-                'source_sha256': source_fingerprint(note.embed_text), 'embedding_model': plan['model'],
-                'embedding_dimensions': int(vectors[note.id].size),
-                'vector_sha256': vector_fingerprint(content),
-                'generated_at': old_index[note.id].get('generated_at', now) if note.id in reused else now}
-        nodes = build_nodes(notes)
-        apply_node_degrees(nodes, collector.edges)
-        graph = {'nodes': nodes, 'edges': collector.edges,
-                 'meta': {'generation': name, 'generated_at': now, 'node_count': len(nodes),
-                          'edge_count': len(collector.edges), 'freshness': 'verified'}}
-        checksums = {}
-        for filename, value in [('index.json', index), ('graph.json', graph), ('relationships.json', relationships)]:
-            content = encoded(value)
-            durable_write(directory / filename, content)
-            checksums[filename] = digest(content)
-        manifest = encoded({'schema_version': 1, 'model': plan['model'], 'files': plan['files'],
-                            'checksums': checksums, 'previous': plan['base']})
-        durable_write(directory / 'manifest.json', manifest)
-        selected, excluded = select_verified_vectors(notes, index, directory, plan['model'])
-        if excluded or set(selected) != set(vectors):
-            raise ValueError("Staged generation failed verification")
-        if scan(data_dir)[1] != plan['files']:
-            raise ValueError("Notes changed during refresh; run dry-run again")
-        sync_directory(directory)
-        sync_directory(generations)
-        fd, temporary = tempfile.mkstemp(prefix='.current-', dir=data_dir / 'knowledge')
-        os.close(fd)
-        try:
-            durable_write(Path(temporary), encoded({'generation': name, 'manifest_sha256': digest(manifest)}))
-            os.replace(temporary, data_dir / 'knowledge' / 'current.json')
-            sync_directory(data_dir / 'knowledge')
-        finally:
-            Path(temporary).unlink(missing_ok=True)
-        return graph
+        return _refresh_locked(data_dir, model=model, allow_api=allow_api,
+            approve_plan=approve_plan, price_per_million=price_per_million,
+            max_cost=max_cost, migrate_legacy=migrate_legacy, provider=provider,
+            threshold=threshold, embedder=embedder)
+
+
+def _refresh_locked(data_dir=DATA_DIR, *, model=EMBEDDING_MODEL, allow_api=False,
+            approve_plan=None, price_per_million=None, max_cost=None,
+            migrate_legacy=False, provider=EMBEDDING_PROVIDER,
+            threshold=SIMILARITY_THRESHOLD, embedder=None):
+    """Internal transaction body. Caller must hold knowledge/refresh.lock."""
+    data_dir = Path(data_dir).resolve()
+    if data_dir == (ROOT / 'demo').resolve() or (ROOT / 'demo').resolve() in data_dir.parents:
+        raise ValueError("Refresh cannot write the published demo")
+    if not math.isfinite(threshold) or not 0 <= threshold <= 1:
+        raise ValueError("Threshold must be between zero and one")
+    notes, vectors, affected, plan = inventory(data_dir, model, provider)
+    reused = set(vectors)
+    old = current(data_dir)
+    old_path = old[0] / 'index.json' if old else data_dir / 'embeddings/index.json'
+    old_index = json.loads(old_path.read_text()) if old_path.exists() else {}
+    if affected:
+        if provider == 'openai':
+            if not allow_api or approve_plan != plan['approval_digest']:
+                raise ValueError("External embedding requires --allow-api and --approve-plan from dry-run")
+            if any(x is None or not math.isfinite(x) or x < 0 for x in (price_per_million, max_cost)):
+                raise ValueError("Supply nonnegative --price-per-million and --max-cost")
+            cost = plan['input_token_upper_bound'] * price_per_million / 1_000_000
+            if cost > max_cost:
+                raise ValueError("Expected upper-bound cost exceeds approved budget")
+        if approve_plan is not None and approve_plan != plan['approval_digest']:
+            raise ValueError("Plan changed; run dry-run again")
+        if plan['legacy_unknown'] and not migrate_legacy:
+            raise ValueError("Legacy vectors require --migrate-legacy; they will be re-embedded")
+        if embedder is None:
+            embedder = create_embedder(model, provider)
+        for note in affected:
+            vector = validate_vector(embedder(note.embed_text))
+            vectors[note.id] = vector
+    if len({v.size for v in vectors.values()}) > 1:
+        raise ValueError("Embedding dimension mismatch")
+    from build_graph import (EdgeCollector, collect_explicit_edges, build_nodes,
+                             apply_node_degrees)
+    from link import compute_all_similarity_pairs
+    collector = EdgeCollector({n.id for n in notes})
+    collect_explicit_edges(notes, {n.slug: n.id for n in notes}, collector)
+    relationships = []
+    for pair in compute_all_similarity_pairs(vectors):
+        if pair.score >= threshold:
+            relationships.append({'source': pair.source_id, 'target': pair.target_id,
+                                  'weight': round(pair.score, 4), 'type': 'semantic'})
+            collector.add_semantic(pair.source_id, pair.target_id, pair.score)
+    name = uuid.uuid4().hex
+    generations = data_dir / 'knowledge' / 'generations'
+    generations.mkdir(exist_ok=True)
+    directory = generations / name
+    directory.mkdir()
+    # Unpublished generations deliberately remain recoverable on any failure.
+    index = {}
+    now = datetime.now(timezone.utc).isoformat()
+    for note in notes:
+        stream = io.BytesIO()
+        np.save(stream, vectors[note.id], allow_pickle=False)
+        content = stream.getvalue()
+        path = directory / (note.id + '.npy')
+        durable_write(path, content)
+        index[note.id] = {'schema_version': 1, 'note_id': note.id,
+            'wiki_path': note.wiki_path, 'path': path.name,
+            'source_sha256': source_fingerprint(note.embed_text), 'embedding_model': plan['model'],
+            'embedding_dimensions': int(vectors[note.id].size),
+            'vector_sha256': vector_fingerprint(content),
+            'generated_at': old_index[note.id].get('generated_at', now) if note.id in reused else now}
+    nodes = build_nodes(notes)
+    apply_node_degrees(nodes, collector.edges)
+    graph = {'nodes': nodes, 'edges': collector.edges,
+             'meta': {'generation': name, 'generated_at': now, 'node_count': len(nodes),
+                      'edge_count': len(collector.edges), 'freshness': 'verified'}}
+    checksums = {}
+    for filename, value in [('index.json', index), ('graph.json', graph), ('relationships.json', relationships)]:
+        content = encoded(value)
+        durable_write(directory / filename, content)
+        checksums[filename] = digest(content)
+    manifest = encoded({'schema_version': 1, 'model': plan['model'], 'files': plan['files'],
+                        'checksums': checksums, 'previous': plan['base']})
+    durable_write(directory / 'manifest.json', manifest)
+    selected, excluded = select_verified_vectors(notes, index, directory, plan['model'])
+    if excluded or set(selected) != set(vectors):
+        raise ValueError("Staged generation failed verification")
+    if scan(data_dir)[1] != plan['files']:
+        raise ValueError("Notes changed during refresh; run dry-run again")
+    sync_directory(directory)
+    sync_directory(generations)
+    fd, temporary = tempfile.mkstemp(prefix='.current-', dir=data_dir / 'knowledge')
+    os.close(fd)
+    try:
+        durable_write(Path(temporary), encoded({'generation': name, 'manifest_sha256': digest(manifest)}))
+        os.replace(temporary, data_dir / 'knowledge' / 'current.json')
+        sync_directory(data_dir / 'knowledge')
+    finally:
+        Path(temporary).unlink(missing_ok=True)
+    return graph
 
 
 def restore(data_dir, generation, model=EMBEDDING_MODEL, provider=EMBEDDING_PROVIDER):

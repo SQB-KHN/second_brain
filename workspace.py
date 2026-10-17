@@ -65,6 +65,8 @@ def _save_note(title, body, para, tags, *, path=None, expected=None):
         note = load_wiki_note(path)
         if not note:
             raise ValueError('Cannot edit invalid note metadata.')
+        if note.frontmatter.get('document'):
+            raise ValueError('Imported document segments are read-only. Import a changed source as a new version.')
         metadata = dict(note.frontmatter)
         # Keep identity and category/path alignment stable during editing.
         para = note.para

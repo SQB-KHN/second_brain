@@ -150,6 +150,9 @@ def render_sources(result: AskResult) -> None:
 
     st.markdown("**Sources**")
     for source in result.sources:
+        if source.provenance:
+            from document_ingestion import citation
+            st.text(citation(source.provenance))
         st.markdown(
             f"- **{source.title}** · `{source.para}` · score `{source.score:.3f}`  \n"
             f"  {source.summary}"
@@ -214,6 +217,8 @@ def capture_view():
     if DEPLOY_MODE or not (ENABLE_CAPTURE and ENABLE_REFRESH_BRAIN):
         st.info('Capture is read-only here. Run locally with capture and refresh enabled to save notes.')
         return
+    with st.expander('Import document'):
+        document_import_view()
     if st.session_state.get('pending_index'):
         st.warning('A saved change is waiting for indexing. Retry before saving another note.')
         if st.button('Retry indexing', type='primary'):
@@ -257,8 +262,46 @@ def capture_view():
             (st.success if ok else st.error)(message)
 
 
+def document_import_view():
+    import document_ingestion as documents
+    st.caption('PDF / UTF-8 CSV / XLSX · maximum 25 MiB. Extraction and Ollama indexing stay local. No OCR. Sources are saved only after confirmation.')
+    uploaded = st.file_uploader('Document', type=['pdf', 'csv', 'xlsx'], key='document_upload')
+    if uploaded is not None:
+        try:
+            preview = documents.extract(uploaded.name, uploaded.getvalue())
+            st.write(preview['filename'])
+            st.caption(f"SHA-256: {preview['sha256']} · {len(preview['segments'])} segments · pages: {preview.get('pages', '—')} · sheets: {', '.join(preview.get('sheets', []))}")
+            for warning in preview['warnings']:
+                st.warning(warning)
+            for segment in preview['segments'][:20]:
+                meta = dict(segment, filename=preview['filename'])
+                st.text(documents.citation(meta))
+                st.code(segment['text'], language=None)
+            if len(preview['segments']) > 20:
+                st.caption('Showing first 20 segments. Full extracted text is available below.')
+            st.download_button('Review all extracted segments', data='\n\n'.join(documents.citation(dict(seg, filename=preview['filename'])) + '\n' + seg['text'] for seg in preview['segments']), file_name='extraction-preview.txt')
+            if st.button('Save & Index document', type='primary'):
+                with st.spinner('Saving and indexing locally…'):
+                    documents.save_and_index(uploaded.name, uploaded.getvalue())
+                st.success('Document indexed (identical reuploads reuse the existing import).')
+        except Exception as exc:
+            st.error(str(exc) if isinstance(exc, ValueError) else 'Import failed. Check local dependencies and retry.')
+    st.markdown('**Import history**')
+    for item in documents.history():
+        st.text(f"{item['filename']} · {item['status']} · {item['sha256'][:12]}")
+        with st.expander('Provenance ' + item['id'][:12]):
+            st.json({k: v for k, v in item.items() if k != 'segments'})
+        if item['status'] != 'indexed' and st.button('Retry import', key='retry_' + item['id']):
+            try:
+                documents.save_and_index(ident=item['id'])
+                st.rerun()
+            except ValueError as exc:
+                st.error(str(exc))
+
+
 def ask_view():
     st.caption('Ask across your indexed notes. Questions and retrieved excerpts go to your configured answer provider (including Grok); Ollama embeddings stay local.')
+    consent = st.checkbox('Allow sending retrieved document excerpts and my question to the configured external LLM (Grok/xAI, OpenAI or Groq); charges may apply.', value=False)
     history = st.session_state.setdefault('chat_history', [])
     for result in history:
         with st.chat_message('user'):
@@ -268,15 +311,13 @@ def ask_view():
             render_sources(result)
     question = st.chat_input('Ask anything about your knowledge…')
     if question:
-        if not llm_configured():
-            st.error('Configure an xAI, OpenAI or Groq API key to ask questions.')
-        elif ask_rate_limited():
+        if ask_rate_limited():
             st.error('Question rate limit reached. Please try again in a minute.')
         else:
             record_ask_request()
             try:
                 with st.spinner('Finding sources and composing an answer…'):
-                    result = ask(question)
+                    result = ask(question, allow_document_external=consent)
                 history.append(result)
                 st.rerun()
             except AskError as exc:
@@ -312,6 +353,11 @@ def library_view(all_notes):
     st.markdown(note.body)
     if DEPLOY_MODE or not (ENABLE_CAPTURE and ENABLE_REFRESH_BRAIN):
         st.caption('This library is read-only.')
+        return
+    if note.frontmatter.get('document'):
+        from document_ingestion import citation
+        st.text(citation(note.frontmatter['document']))
+        st.caption('Imported source evidence is read-only. Reimport a changed document as a new version.')
         return
     with st.expander('Edit note'):
         key = 'edit_' + ident
