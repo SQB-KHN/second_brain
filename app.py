@@ -472,7 +472,7 @@ def main():
     with st.sidebar:
         st.markdown('## ◈ SecondSelf')
         st.caption('ANALYTICS LAB  ·  LOCAL FIRST')
-        view = st.radio('Workspace', VIEWS, key='view', format_func=lab_nav_label)
+        view = st.radio('Workspace', VIEWS, key='view')
         st.caption('WORKSPACE  /  Home · Ask · Capture')
         st.caption('KNOWLEDGE  /  Library · Explore · Insights')
         st.caption('RESEARCH & DATA  /  Datasets · Analyse')
