@@ -3,6 +3,7 @@ from datetime import date, datetime, timedelta
 from zoneinfo import ZoneInfo
 import streamlit as st
 import config
+from retro_studio_ui import topbar
 from task_service import Tasks, for_day, local_time
 
 
@@ -14,7 +15,9 @@ def render(navigate, dark=False):
     if not dark:
         st.markdown('<style>.stApp{background:#faf5f2!important}</style>', unsafe_allow_html=True)
     st.caption('YOUR DAY, WITH INTENTION · LOCAL PLANNER')
-    st.title('Today')
+    st.title('Make today yours.')
+    st.caption('Your rhythm · Your priorities · Your little digital universe')
+    topbar('my_day.exe')
     with st.container(key='today-desktop'):
         nav = st.columns(2)
         nav[0].button('Research', on_click=navigate, args=('Ask',), use_container_width=True)
@@ -23,7 +26,8 @@ def render(navigate, dark=False):
         mobile = st.columns(3)
         for col, label, target in zip(mobile, ('Today', 'Research', 'Analytics'), ('Today', 'Ask', 'Analyse')):
             col.button(label, key='mobile_'+label, on_click=navigate, args=(target,), use_container_width=True)
-    controls = st.columns([2, 1, 2])
+    with st.expander('◷ Calendar controls · day, view and timezone', expanded=False):
+        controls = st.columns([2, 1, 2])
     day = controls[0].date_input('Planning day', value=date.today())
     mode = controls[1].selectbox('Planning view', ('Day', 'Week'))
     zone = controls[2].text_input('Display timezone', value='UTC')
@@ -49,15 +53,31 @@ def render(navigate, dark=False):
     def card(r, timed=False):
         seen[r['id']] = seen.get(r['id'], 0) + 1
         key = r['id'] + str(seen[r['id']])
+        import html
+        palette = {
+            1: ('#7e9dd3', '#deebfb'),
+            2: ('#8bb780', '#e0f1d9'),
+            3: ('#d99a82', '#fce9db'),
+        }
+        accent, shade = palette[r['priority']]
+        time_label = 'Unscheduled'
         if timed:
             a, b = (datetime.fromisoformat(r[k]).astimezone(ZoneInfo(zone)) for k in ('scheduled_start', 'scheduled_end'))
-            color = {1: '#ebd5df', 2: '#d9e8e2', 3: '#f1e2ca'}[r['priority']]
-            st.markdown(f'<div class="today-rail" style="background:{color};color:#302832">{a:%a %H:%M} — {b:%a %H:%M}</div>', unsafe_allow_html=True)
-        st.text(f"{r['title']} · {r['status']} · P{r['priority']}")
-        if r['project']:
-            st.text(r['project'])
+            time_label = f'{a:%H:%M} – {b:%H:%M}'
+        status_label = 'Done' if r['status'] == 'done' else r['status'].capitalize()
+        title = html.escape(r['title'])
+        meta = html.escape(' · '.join(filter(None, [r.get('project'), status_label, f'P{r["priority"]}'])))
+        st.markdown(
+            '<div class="retro-timeline"><div class="retro-time">'
+            + html.escape(time_label)
+            + '</div><div class="retro-task" style="--task-accent:' + accent
+            + ';--task-bg:' + shade + '"><div class="retro-task-title">'
+            + title + '</div><div class="retro-task-meta">' + meta
+            + '</div></div></div>',
+            unsafe_allow_html=True,
+        )
         if r['details']:
-            st.text(r['details'])
+            st.caption(r['details'])
         if store:
             cols = st.columns(2)
             if cols[0].button('Edit / reschedule', key='edit'+key):
@@ -70,9 +90,9 @@ def render(navigate, dark=False):
                     st.rerun()
                 except Exception:
                     st.error('Could not save. Reload and try again.')
-    timeline, focus = st.columns([2, 1])
+    timeline, focus = st.columns([2.15, 1], gap='large')
     with focus:
-        st.subheader('Three priorities')
+        st.subheader('★ Three priorities')
         candidates = [r for r in records if r['status'] != 'done' and (r in schedule or r in due or r in unscheduled)]
         for i, r in enumerate(candidates[:3], 1):
             st.text(f"{i:02} · P{r['priority']} · {r['title']}")
@@ -80,13 +100,13 @@ def render(navigate, dark=False):
             st.caption('Room to focus. Add a task when you are ready.')
     with timeline:
         if mode == 'Day':
-            st.subheader('Day timeline')
+            st.subheader('◷ Daily rhythm')
             for r in schedule:
                 card(r, True)
             if not schedule:
                 st.caption('No scheduled time. Due dates and unscheduled tasks stay separate.')
         else:
-            st.subheader('Week timeline')
+            st.subheader('▦ Weekly rhythm')
             monday = day - timedelta(days=day.weekday())
             for offset in range(7):
                 d = monday + timedelta(days=offset)
@@ -109,7 +129,8 @@ def render(navigate, dark=False):
             st.text('Due '+r['due'])
             card(r)
     if store:
-        editor(store, records, zone)
+        with st.expander('✎ Create or edit a task', expanded=bool(st.session_state.get('planner_edit'))):
+            editor(store, records, zone)
 
 
 def save_existing(store, record, **changes):
