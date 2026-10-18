@@ -160,7 +160,7 @@ def render_sources(result: AskResult) -> None:
         )
 
 
-VIEWS = ('Home', 'Capture', 'Ask', 'Explore', 'Library', 'Insights', 'Datasets', 'Analyse')
+VIEWS = ('Today', 'Home', 'Capture', 'Ask', 'Explore', 'Library', 'Insights', 'Datasets', 'Analyse')
 
 
 def navigate(view):
@@ -520,7 +520,7 @@ def main():
         st.caption('For external embedding approval or legacy migration, see docs/phase2-operations.md.')
     if notice := st.session_state.pop('notice', None):
         st.success(notice)
-    if view != 'Home':
+    if view not in ('Home', 'Today'):
         lab_hero(view)
     stats = load_graph_stats()
     all_notes = notes()
@@ -528,7 +528,10 @@ def main():
         st.warning('Your graph needs a verified refresh. Saved notes remain available in Library.')
     if st.session_state.get('pending_index') and view != 'Capture':
         st.warning('A saved change needs indexing. Open Capture to retry.')
-    if view == 'Home':
+    if view == 'Today':
+        from today_ui import render
+        render(navigate, dark)
+    elif view == 'Home':
         lab_home(all_notes, stats, navigate)
     elif view == 'Capture':
         capture_view()

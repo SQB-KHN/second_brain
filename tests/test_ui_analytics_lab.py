@@ -8,7 +8,7 @@ import ui_analytics_lab as lab
 class AnalyticsLabTests(unittest.TestCase):
     def test_all_views_have_consistent_navigation_labels(self):
         from app import VIEWS
-        self.assertEqual(len(VIEWS), 8)
+        self.assertEqual(len(VIEWS), 9)
         for name in VIEWS:
             self.assertIn(name, lab.nav_label(name))
             self.assertIn(name, lab.SUBTITLES)
