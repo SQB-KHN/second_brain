@@ -175,3 +175,7 @@ Statistical analysis: [Analyse workspace and numerical conventions](docs/statist
 ### SecondSelf 3.1: Analyse workspace (draft PR #21)
 
 On the `statistical-engine-v1` branch, **Analyse** operates on registered immutable dataset versions, runs allowlisted local statistical procedures with SciPy/statsmodels, displays assumptions and diagnostics, and saves reproducible analysis manifests with charts and exports. Supported workflows include correlations, paired/independent t-tests, chi-square, OLS and binary logistic regression. It does **not** run uploaded scripts, compute inferential results with an LLM, establish causation or send dataset values to external AI. See [statistical engine documentation](docs/statistical-engine.md) and [PR #21](https://github.com/SQB-KHN/second_brain/pull/21). The feature is **not in `main` until PR #21 is merged**.
+
+### Analytics Lab UI 1.0 (draft)
+
+The [Analytics Lab UI refresh](docs/ui-analytics-lab-v1.md) introduces a clearer sidebar, responsive light/dark visual tokens, a more useful Home dashboard and reusable presentation components without changing application data or provider behaviour. The redesign is developed on the `ui-analytics-lab-v1` branch and is **not yet merged into main**. All feature capabilities and privacy safeguards remain subject to their existing implementation and acceptance tests.
