@@ -17,6 +17,7 @@ from typing import Any
 import streamlit as st
 import streamlit.components.v1 as components
 
+from retro_studio_ui import apply as retro_apply
 from ask import AskError, AskResult, ask
 from ui_analytics_lab import hero as lab_hero, home as lab_home, nav_label as lab_nav_label, theme_css as lab_theme_css
 from capture import capture_file, capture_text, capture_url, ensure_meta_index, write_capture
@@ -470,12 +471,10 @@ def main():
     @media(max-width:640px){.block-container{padding:1.2rem 1rem}h1{font-size:2rem}}
     </style>''', unsafe_allow_html=True)
     with st.sidebar:
-        st.markdown('## ◈ SecondSelf')
-        st.caption('ANALYTICS LAB  ·  LOCAL FIRST')
+        st.markdown('## ▣ secondself.exe')
+        st.caption('RETRO STUDIO  ·  LOCAL FIRST')
         view = st.radio('Workspace', VIEWS, key='view')
-        st.caption('WORKSPACE  /  Home · Ask · Capture')
-        st.caption('KNOWLEDGE  /  Library · Explore · Insights')
-        st.caption('RESEARCH & DATA  /  Datasets · Analyse')
+        st.caption('TODAY  /  KNOWLEDGE  /  ANALYTICS')
         st.divider()
         appearance = st.selectbox('Appearance', ['Light', 'Dark'])
         st.caption('Demo workspace' if DEPLOY_MODE else 'Local workspace')
@@ -513,6 +512,7 @@ def main():
 
     </style>''', unsafe_allow_html=True)
     st.markdown(lab_theme_css(dark), unsafe_allow_html=True)
+    retro_apply(dark)
     if DEPLOY_MODE:
         st.info('Demo · Sample knowledge only. Do not enter personal information. Capture and editing are disabled.')
     if st.session_state.pop('index_error', False):
