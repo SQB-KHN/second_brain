@@ -47,7 +47,7 @@ refresh.refresh(config.DATA_DIR)
                 for _ in range(60):
                     try:
                         page.goto(f'http://127.0.0.1:{port}', timeout=2000)
-                        page.get_by_text('YOUR KNOWLEDGE, CONNECTED', exact=True).wait_for(timeout=5000)
+                        page.get_by_role('heading', name='Today', exact=True).wait_for(timeout=5000)
                         return
                     except Exception:
                         time.sleep(.5)

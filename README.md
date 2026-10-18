@@ -179,3 +179,7 @@ On the `statistical-engine-v1` branch, **Analyse** operates on registered immuta
 ### Analytics Lab UI 1.0 (draft)
 
 The [Analytics Lab UI refresh](docs/ui-analytics-lab-v1.md) introduces a clearer sidebar, responsive light/dark visual tokens, a more useful Home dashboard and reusable presentation components without changing application data or provider behaviour. The redesign is developed on the `ui-analytics-lab-v1` branch and is **not yet merged into main**. All feature capabilities and privacy safeguards remain subject to their existing implementation and acceptance tests.
+
+## Today local planner
+
+Today is the default launch view with private local tasks, priorities, day/week timelines, editing, completion and rescheduling. Research and Analytics are one click away, and all existing views remain in the sidebar. No calendar, notifications or automatic scheduling. See the [Today user guide, privacy and recovery](docs/today.md).

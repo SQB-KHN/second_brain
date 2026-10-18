@@ -21,6 +21,7 @@ NAV_ICONS = {
 }
 
 SUBTITLES = {
+    "Today": "Plan your day privately with a local timeline",
     "Home": "An overview of your local intelligence workspace",
     "Capture": "Collect and index traceable knowledge",
     "Ask": "Ask grounded questions with transparent sources",

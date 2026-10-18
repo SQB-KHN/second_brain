@@ -58,12 +58,15 @@ import ask
 from render_graph import render_graph_html
 at = AppTest.from_file('app.py', default_timeout=30).run()
 assert not at.exception, [e.message for e in at.exception]
-assert next(m.value for m in at.metric if m.label == 'Notes') == str(EXPECTED)
+assert at.radio(key='view').value == 'Today'
+assert not __import__('pathlib').Path('demo/planner').exists()
+at.radio(key='view').set_value('Home').run()
+assert next(m.value for m in at.metric if m.label == 'Indexed notes') == str(EXPECTED)
 assert ('Synthetic Visible Note' in render_graph_html()) == bool(EXPECTED)
 for view in ('Capture', 'Explore', 'Library', 'Ask', 'Insights', 'Datasets', 'Analyse', 'Home'):
-    at.radio[0].set_value(view).run()
+    at.radio(key='view').set_value(view).run()
     assert not at.exception
-at.radio[0].set_value('Ask').run()
+at.radio(key='view').set_value('Ask').run()
 # No API/embedding work should occur on this path.
 with patch.object(ask, 'embed', side_effect=AssertionError('API must not be used')), patch.object(ask, 'get_llm_client', side_effect=AssertionError('API must not be used')):
     result = ask.ask('Synthetic question')
@@ -87,12 +90,12 @@ def button(at, label):
     return next(b for b in at.button if b.label == label)
 
 at = AppTest.from_file('app.py', default_timeout=30).run()
-at.radio[0].set_value('Capture').run()
+at.radio(key='view').set_value('Capture').run()
 at.text_input(key='draft_title').set_value('Synthetic UI title').run()
 at.text_area(key='draft_body').set_value('Synthetic body').run()
 button(at, 'Keep session draft').click().run()
-at.radio[0].set_value('Home').run()
-at.radio[0].set_value('Capture').run()
+at.radio(key='view').set_value('Home').run()
+at.radio(key='view').set_value('Capture').run()
 assert at.text_area(key='draft_body').value == 'Synthetic body'
 with patch.object(workspace, 'refresh', side_effect=ValueError('offline')):
     button(at, 'Save & Index').click().run()
@@ -105,9 +108,9 @@ assert not at.exception
 assert at.success
 assert at.text_area(key='draft_body').value == ''
 assert len(workspace.notes()) == 1
-at.radio[0].set_value('Explore').run()
+at.radio(key='view').set_value('Explore').run()
 assert not at.exception
-at.radio[0].set_value('Library').run()
+at.radio(key='view').set_value('Library').run()
 assert not at.exception
 assert at.text_input(key='edit_' + workspace.notes()[0].id + '_title').value == 'Synthetic UI title'
 """)

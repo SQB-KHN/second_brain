@@ -84,3 +84,6 @@ data/insights/
 
 # Private Dataset Manager stores under any configured workspace
 **/datasets/
+
+# Private local planner stores
+**/planner/
