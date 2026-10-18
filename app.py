@@ -18,6 +18,7 @@ import streamlit as st
 import streamlit.components.v1 as components
 
 from ask import AskError, AskResult, ask
+from ui_analytics_lab import hero as lab_hero, home as lab_home, nav_label as lab_nav_label, theme_css as lab_theme_css
 from capture import capture_file, capture_text, capture_url, ensure_meta_index, write_capture
 from config import (
     ASK_RATE_LIMIT_PER_MINUTE,
@@ -470,8 +471,11 @@ def main():
     </style>''', unsafe_allow_html=True)
     with st.sidebar:
         st.markdown('## ◈ SecondSelf')
-        st.caption('YOUR KNOWLEDGE, CONNECTED')
-        view = st.radio('Workspace', VIEWS, key='view')
+        st.caption('ANALYTICS LAB  ·  LOCAL FIRST')
+        view = st.radio('Workspace', VIEWS, key='view', format_func=lab_nav_label)
+        st.caption('WORKSPACE  /  Home · Ask · Capture')
+        st.caption('KNOWLEDGE  /  Library · Explore · Insights')
+        st.caption('RESEARCH & DATA  /  Datasets · Analyse')
         st.divider()
         appearance = st.selectbox('Appearance', ['Light', 'Dark'])
         st.caption('Demo workspace' if DEPLOY_MODE else 'Local workspace')
@@ -508,6 +512,7 @@ def main():
     [role="listbox"],[role="option"]{{background:{panel}!important;color:{fg}!important}}
 
     </style>''', unsafe_allow_html=True)
+    st.markdown(lab_theme_css(dark), unsafe_allow_html=True)
     if DEPLOY_MODE:
         st.info('Demo · Sample knowledge only. Do not enter personal information. Capture and editing are disabled.')
     if st.session_state.pop('index_error', False):
@@ -515,7 +520,8 @@ def main():
         st.caption('For external embedding approval or legacy migration, see docs/phase2-operations.md.')
     if notice := st.session_state.pop('notice', None):
         st.success(notice)
-    st.title(view)
+    if view != 'Home':
+        lab_hero(view)
     stats = load_graph_stats()
     all_notes = notes()
     if stats['meta'].get('error') or isinstance(stats['meta'].get('freshness'), dict):
@@ -523,23 +529,7 @@ def main():
     if st.session_state.get('pending_index') and view != 'Capture':
         st.warning('A saved change needs indexing. Open Capture to retry.')
     if view == 'Home':
-        st.caption('Make room for ideas. Find the connections that matter.')
-        cols = st.columns(3)
-        for col, label, value in zip(cols, ['Notes', 'Connections', 'Categories'], [len(all_notes), stats['edge_count'], len({n.para for n in all_notes})]):
-            col.metric(label, value)
-        st.subheader('Pick up where you left off')
-        cols = st.columns(3)
-        for col, label, target in zip(cols, ['＋ Capture a thought', 'Ask your knowledge', 'Explore connections'], ['Capture', 'Ask', 'Explore']):
-            col.button(label, on_click=navigate, args=(target,), use_container_width=True)
-        st.subheader('Recent notes')
-        if not all_notes:
-            st.info('Your workspace starts with one thought. Open Capture to add your first note.')
-        for note in all_notes[:6]:
-            with st.container(border=True):
-                st.markdown('**' + note.title.replace('*', '') + '**')
-                st.caption(f'{note.para.title()} · {note.created[:10] or "No date"}')
-                st.write(note.summary)
-        st.caption(f'Last graph update: {stats["generated_at"]}')
+        lab_home(all_notes, stats, navigate)
     elif view == 'Capture':
         capture_view()
     elif view == 'Ask':
